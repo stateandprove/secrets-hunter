@@ -87,6 +87,13 @@ class CLI:
             help=f'Log level (default: {ScannerConfig.LOG_LEVEL})'
         )
 
+        p.add_argument(
+            '--min-confidence',
+            type=int,
+            default=ScannerConfig.MIN_CONFIDENCE,
+            help=f'Minimum confidence (default: {ScannerConfig.MIN_CONFIDENCE})'
+        )
+
     def parse(self):
         args = self.parser.parse_args()
 
@@ -94,6 +101,7 @@ class CLI:
             (self.validate_entropy, [args.hex_entropy, "hex-entropy", settings.HEX_ENTROPY_MAX]),
             (self.validate_entropy, [args.b64_entropy, "b64-entropy", settings.B64_ENTROPY_MAX]),
             (self.validate_min_length, [args.min_length]),
+            (self.validate_min_confidence, [args.min_confidence]),
             (self.validate_workers, [args.workers]),
             (self.validate_json, [args.json_output])
         ]
@@ -110,6 +118,10 @@ class CLI:
     def validate_min_length(self, value):
         if value <= 0:
             self.parser.error("--min-length must be > 0")
+
+    def validate_min_confidence(self, value):
+        if value < 0 or value > 100:
+            self.parser.error("--min-confidence must be between 0 and 100")
 
     def validate_workers(self, value):
         max_workers = (os.cpu_count() or 1) * settings.MAX_WORKERS_MULTIPLIER
@@ -140,6 +152,7 @@ def main():
     config.B64_ENTROPY_THRESHOLD = args.b64_entropy
     config.MIN_STRING_LENGTH = args.min_length
     config.MAX_WORKERS = args.workers
+    config.MIN_CONFIDENCE = args.min_confidence
 
     logging.basicConfig(
         level=args.log_level,

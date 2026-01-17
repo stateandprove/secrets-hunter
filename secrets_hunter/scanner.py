@@ -208,6 +208,8 @@ class SecretsHunter:
             logger.error(f"'{target}' is not a valid file or directory")
 
         if success:
+            min_confidence = self.config.MIN_CONFIDENCE
+            findings = [f for f in findings if f.confidence >= min_confidence]
             findings.sort(key=lambda f: f.confidence, reverse=True)
 
         return findings, success
