@@ -200,6 +200,10 @@ class SecretsHunter:
         findings, success = [], False
         target_path = Path(target)
 
+        if target_path.is_file() or target_path.is_dir():
+            self.pattern_detector.set_base_path(target)
+            self.entropy_detector.set_base_path(target)
+
         if target_path.is_file():
             findings, success = self.scan_file(target_path, show_progress=True)
         elif target_path.is_dir():
@@ -208,6 +212,6 @@ class SecretsHunter:
             logger.error(f"'{target}' is not a valid file or directory")
 
         if success:
-            findings = OutputFormatter.format(findings, self.config, target)
+            findings = OutputFormatter.format(findings, self.config)
 
         return findings, success

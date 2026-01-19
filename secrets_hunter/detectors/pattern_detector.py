@@ -1,6 +1,7 @@
 import re
 
 from typing import List
+
 from secrets_hunter.detectors.base import BaseDetector
 from secrets_hunter.config.patterns import SECRET_PATTERNS
 from secrets_hunter.models import Finding
@@ -16,7 +17,7 @@ class PatternDetector(BaseDetector):
             for secret_type, pattern in SECRET_PATTERNS.items():
                 if re.search(pattern, string):
                     findings.append(Finding(
-                        file=filepath,
+                        file=self.format_filepath(filepath),
                         line=line_num,
                         type=secret_type,
                         match=string,

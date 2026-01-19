@@ -6,15 +6,12 @@ from secrets_hunter.config.settings import ScannerConfig
 
 class OutputFormatter:
     @staticmethod
-    def format(findings: List[Finding], config: ScannerConfig, target: str) -> List[Finding]:
+    def format(findings: List[Finding], config: ScannerConfig) -> List[Finding]:
         output_findings = []
 
         for finding in findings:
             if finding.confidence < config.MIN_CONFIDENCE:
                 continue
-
-            prefix = target.rstrip("/") + "/"
-            finding.file = finding.file.removeprefix(prefix)
 
             if not config.REVEAL_FINDINGS:
                 finding.match = "***MASKED***"

@@ -1,4 +1,5 @@
 from typing import List
+
 from secrets_hunter.detectors.base import BaseDetector
 from secrets_hunter.models import Finding
 from secrets_hunter.detectors.utils import entropy as entropy_utils
@@ -27,7 +28,7 @@ class EntropyDetector(BaseDetector):
 
             if is_high_entropy:
                 findings.append(Finding(
-                    file=filepath,
+                    file=self.format_filepath(filepath),
                     line=line_num,
                     type=string_type,
                     match=string,
