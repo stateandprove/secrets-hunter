@@ -11,6 +11,7 @@ class ScannerConfig:
     MIN_STRING_LENGTH = 10
     MIN_CONFIDENCE = 80
     MAX_WORKERS = 4
+    REVEAL_FINDINGS = False
     LOG_LEVEL = "INFO"
 
 
