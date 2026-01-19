@@ -10,6 +10,7 @@ from secrets_hunter.detectors.pattern_detector import PatternDetector
 from secrets_hunter.detectors.utils import StringsExtractor, validators
 from secrets_hunter.handlers.file_handler import FileHandler
 from secrets_hunter.handlers.progress import FileProgressBar, FolderProgressBar
+from secrets_hunter.handlers.output_formater import OutputFormatter
 from secrets_hunter.models import Finding
 
 logger = logging.getLogger(__name__)
@@ -207,15 +208,6 @@ class SecretsHunter:
             logger.error(f"'{target}' is not a valid file or directory")
 
         if success:
-            min_confidence = self.config.MIN_CONFIDENCE
-            output_findings = []
-            findings = [f for f in findings if f.confidence >= min_confidence]
-
-            for finding in findings:
-                if finding.confidence >= min_confidence:
-                    finding.file = finding.file.removeprefix(target + "/")
-                    output_findings.append(finding)
-
-            findings.sort(key=lambda f: f.confidence, reverse=True)
+            findings = OutputFormatter.format(findings, self.config, target)
 
         return findings, success

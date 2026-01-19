@@ -45,6 +45,13 @@ class CLI:
         )
 
         p.add_argument(
+            "--reveal-findings",
+            action="store_true",
+            default=ScannerConfig.REVEAL_FINDINGS,
+            help=f"Reveal findings in output (default: {ScannerConfig.REVEAL_FINDINGS})"
+        )
+
+        p.add_argument(
             '--json',
             dest='json_output',
             metavar='FILE',
@@ -153,6 +160,7 @@ def main():
     config.MIN_STRING_LENGTH = args.min_length
     config.MAX_WORKERS = args.workers
     config.MIN_CONFIDENCE = args.min_confidence
+    config.REVEAL_FINDINGS = args.reveal_findings
 
     logging.basicConfig(
         level=args.log_level,
