@@ -180,13 +180,12 @@ class SecretsHunter:
                         progress_bar.render(processed_count, total_files)
 
             success = True
+            print("\n")
 
             if failed_count:
                 logger.warning(f"Scan finished with {failed_count} file(s) skipped.")
             else:
                 logger.info("Scan finished.")
-
-            print("\n")
 
         except KeyboardInterrupt:
             print("\n")
@@ -209,7 +208,14 @@ class SecretsHunter:
 
         if success:
             min_confidence = self.config.MIN_CONFIDENCE
+            output_findings = []
             findings = [f for f in findings if f.confidence >= min_confidence]
+
+            for finding in findings:
+                if finding.confidence >= min_confidence:
+                    finding.file = finding.file.removeprefix(target + "/")
+                    output_findings.append(finding)
+
             findings.sort(key=lambda f: f.confidence, reverse=True)
 
         return findings, success
