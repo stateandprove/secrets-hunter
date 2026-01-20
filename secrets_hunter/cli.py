@@ -6,8 +6,7 @@ import logging
 from pathlib import Path
 
 from secrets_hunter.scanner import SecretsHunter
-from secrets_hunter.config import settings
-from secrets_hunter.config.settings import ScannerConfig
+from secrets_hunter.config import settings, CliArgs, load_runtime_config
 from secrets_hunter.reporters.console_reporter import ConsoleReporter
 from secrets_hunter.reporters.json_reporter import JSONReporter
 
@@ -47,8 +46,16 @@ class CLI:
         p.add_argument(
             "--reveal-findings",
             action="store_true",
-            default=ScannerConfig.REVEAL_FINDINGS,
-            help=f"Reveal findings in output (default: {ScannerConfig.REVEAL_FINDINGS})"
+            default=CliArgs.REVEAL_FINDINGS,
+            help=f"Reveal findings in output (default: {CliArgs.REVEAL_FINDINGS})"
+        )
+
+        p.add_argument(
+            "--config",
+            action="append",
+            default=None,
+            metavar="FILE",
+            help="Path to TOML overlay config. Can be used multiple times."
         )
 
         p.add_argument(
@@ -61,44 +68,44 @@ class CLI:
         p.add_argument(
             '--hex-entropy',
             type=float,
-            default=ScannerConfig.HEX_ENTROPY_THRESHOLD,
-            help=f'Hex entropy threshold (default: {ScannerConfig.HEX_ENTROPY_THRESHOLD})'
+            default=CliArgs.HEX_ENTROPY_THRESHOLD,
+            help=f'Hex entropy threshold (default: {CliArgs.HEX_ENTROPY_THRESHOLD})'
         )
 
         p.add_argument(
             '--b64-entropy',
             type=float,
-            default=ScannerConfig.B64_ENTROPY_THRESHOLD,
-            help=f'Base64 entropy threshold (default: {ScannerConfig.B64_ENTROPY_THRESHOLD})'
+            default=CliArgs.B64_ENTROPY_THRESHOLD,
+            help=f'Base64 entropy threshold (default: {CliArgs.B64_ENTROPY_THRESHOLD})'
         )
 
         p.add_argument(
             '--min-length',
             type=int,
-            default=ScannerConfig.MIN_STRING_LENGTH,
-            help=f'Minimum string length (default: {ScannerConfig.MIN_STRING_LENGTH})'
+            default=CliArgs.MIN_STRING_LENGTH,
+            help=f'Minimum string length (default: {CliArgs.MIN_STRING_LENGTH})'
         )
 
         p.add_argument(
             '--workers',
             type=int,
-            default=ScannerConfig.MAX_WORKERS,
-            help=f'Number of parallel workers (default: {ScannerConfig.MAX_WORKERS})'
+            default=CliArgs.MAX_WORKERS,
+            help=f'Number of parallel workers (default: {CliArgs.MAX_WORKERS})'
         )
 
         p.add_argument(
             '--log-level',
             type=str,
             choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-            default=ScannerConfig.LOG_LEVEL,
-            help=f'Log level (default: {ScannerConfig.LOG_LEVEL})'
+            default=CliArgs.LOG_LEVEL,
+            help=f'Log level (default: {CliArgs.LOG_LEVEL})'
         )
 
         p.add_argument(
             '--min-confidence',
             type=int,
-            default=ScannerConfig.MIN_CONFIDENCE,
-            help=f'Minimum confidence (default: {ScannerConfig.MIN_CONFIDENCE})'
+            default=CliArgs.MIN_CONFIDENCE,
+            help=f'Minimum confidence (default: {CliArgs.MIN_CONFIDENCE})'
         )
 
     def parse(self):
@@ -108,6 +115,7 @@ class CLI:
             (self.validate_entropy, [args.hex_entropy, "hex-entropy", settings.HEX_ENTROPY_MAX]),
             (self.validate_entropy, [args.b64_entropy, "b64-entropy", settings.B64_ENTROPY_MAX]),
             (self.validate_min_length, [args.min_length]),
+            (self.validate_config_files, [args.config]),
             (self.validate_min_confidence, [args.min_confidence]),
             (self.validate_workers, [args.workers]),
             (self.validate_json, [args.json_output])
@@ -129,6 +137,14 @@ class CLI:
     def validate_min_confidence(self, value):
         if value < 0 or value > 100:
             self.parser.error("--min-confidence must be between 0 and 100")
+
+    def validate_config_files(self, paths):
+        for p in paths or []:
+            path = Path(p).expanduser().resolve()
+            if not path.exists() or not path.is_file():
+                self.parser.error(f"--config file does not exist: {path}")
+            if path.suffix.lower() != ".toml":
+                self.parser.error(f"--config must be a .toml file: {path}")
 
     def validate_workers(self, value):
         max_workers = (os.cpu_count() or 1) * settings.MAX_WORKERS_MULTIPLIER
@@ -154,13 +170,15 @@ def main():
     cli = CLI()
     args = cli.parse()
 
-    config = ScannerConfig()
-    config.HEX_ENTROPY_THRESHOLD = args.hex_entropy
-    config.B64_ENTROPY_THRESHOLD = args.b64_entropy
-    config.MIN_STRING_LENGTH = args.min_length
-    config.MAX_WORKERS = args.workers
-    config.MIN_CONFIDENCE = args.min_confidence
-    config.REVEAL_FINDINGS = args.reveal_findings
+    cli_args = CliArgs()
+    cli_args.HEX_ENTROPY_THRESHOLD = args.hex_entropy
+    cli_args.B64_ENTROPY_THRESHOLD = args.b64_entropy
+    cli_args.MIN_STRING_LENGTH = args.min_length
+    cli_args.MAX_WORKERS = args.workers
+    cli_args.MIN_CONFIDENCE = args.min_confidence
+    cli_args.REVEAL_FINDINGS = args.reveal_findings
+
+    runtime_cfg = load_runtime_config(args.config)
 
     logging.basicConfig(
         level=args.log_level,
@@ -168,7 +186,7 @@ def main():
         datefmt='%Y-%m-%d %H:%M:%S'
     )
 
-    scanner = SecretsHunter(config)
+    scanner = SecretsHunter(runtime_cfg, cli_args)
     findings, success = scanner.scan(args.target)
 
     if not success:

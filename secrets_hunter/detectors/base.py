@@ -6,8 +6,7 @@ from secrets_hunter.models import Finding
 
 
 class BaseDetector(ABC):
-    def __init__(self, config):
-        self.config = config
+    def __init__(self):
         self.base_path: Path | None = None
 
     @abstractmethod

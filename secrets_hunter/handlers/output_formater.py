@@ -1,12 +1,12 @@
 from typing import List
 
 from secrets_hunter.models import Finding
-from secrets_hunter.config.settings import ScannerConfig
+from secrets_hunter.config.settings import CliArgs
 
 
 class OutputFormatter:
     @staticmethod
-    def format(findings: List[Finding], config: ScannerConfig) -> List[Finding]:
+    def format(findings: List[Finding], config: CliArgs) -> List[Finding]:
         output_findings = []
 
         for finding in findings:

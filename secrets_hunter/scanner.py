@@ -4,7 +4,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import List, Tuple
 
-from secrets_hunter.config import patterns, settings
+from secrets_hunter.config import CliArgs, RuntimeConfig
 from secrets_hunter.detectors.entropy_detector import EntropyDetector
 from secrets_hunter.detectors.pattern_detector import PatternDetector
 from secrets_hunter.detectors.utils import StringsExtractor, validators
@@ -17,27 +17,27 @@ logger = logging.getLogger(__name__)
 
 
 class SecretsHunter:
-    def __init__(self, config: settings.ScannerConfig = None):
-        self.config = config or settings.ScannerConfig()
-        self.pattern_detector = PatternDetector(self.config)
-        self.entropy_detector = EntropyDetector(self.config)
+    def __init__(self,  runtime_cfg: RuntimeConfig, cli_args: CliArgs = None):
+        self.cli_args = cli_args or CliArgs()
+        self.runtime_cfg = runtime_cfg
+        self.pattern_detector = PatternDetector(self.runtime_cfg.secret_patterns)
+        self.entropy_detector = EntropyDetector(self.cli_args)
         self.file_handler = FileHandler(
-            settings.IGNORE_EXTENSIONS,
-            settings.IGNORE_DIRS
+            self.runtime_cfg.ignore_extensions,
+            self.runtime_cfg.ignore_dirs
         )
         self.validators = [
-            validators.FalsePositiveValidator(),
-            validators.MinLengthValidator(min_string_length=self.config.MIN_STRING_LENGTH)
+            validators.FalsePositiveValidator(exclude_patterns=self.runtime_cfg.exclude_patterns),
+            validators.MinLengthValidator(min_string_length=self.cli_args.MIN_STRING_LENGTH)
         ]
-        self.strings_extractor = StringsExtractor()
+        self.strings_extractor = StringsExtractor(self.runtime_cfg.assignment_patterns)
 
     def is_string_valid(self, string: str) -> bool:
         return all(validator.is_valid(string) for validator in self.validators)
 
-    @staticmethod
-    def is_secret_var(v: str) -> bool:
+    def is_secret_var(self, v: str) -> bool:
         v = v.lower()
-        return any(k in v for k in patterns.SECRET_KEYWORDS)
+        return any(k in v for k in self.runtime_cfg.secret_keywords)
 
     def extract_findings_from_line(self, line_num: int, line: str, filepath: Path) -> List[Finding]:
         # Step 1: Extract all strings from a line
@@ -148,14 +148,14 @@ class SecretsHunter:
             return all_findings, True
 
         logger.info(f"Found {total_files} files to scan")
-        logger.info(f"Scanning with {self.config.MAX_WORKERS} workers...\n")
+        logger.info(f"Scanning with {self.cli_args.MAX_WORKERS} workers...\n")
 
         processed_count = 0
         failed_count = 0
         progress_bar = FolderProgressBar()
 
         try:
-            with ThreadPoolExecutor(max_workers=self.config.MAX_WORKERS) as executor:
+            with ThreadPoolExecutor(max_workers=self.cli_args.MAX_WORKERS) as executor:
                 futures = {executor.submit(self.scan_file, f, show_progress=False): f for f in files}
 
                 for future in as_completed(futures):
@@ -212,6 +212,6 @@ class SecretsHunter:
             logger.error(f"'{target}' is not a valid file or directory")
 
         if success:
-            findings = OutputFormatter.format(findings, self.config)
+            findings = OutputFormatter.format(findings, self.cli_args)
 
         return findings, success
