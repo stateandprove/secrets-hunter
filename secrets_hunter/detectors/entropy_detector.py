@@ -1,7 +1,7 @@
 from typing import List
 
 from secrets_hunter.detectors.base import BaseDetector
-from secrets_hunter.models import Finding
+from secrets_hunter.models import Finding, DetectionMethod
 from secrets_hunter.detectors.utils import entropy as entropy_utils
 
 
@@ -33,7 +33,7 @@ class EntropyDetector(BaseDetector):
                     type=string_type,
                     match=string,
                     context=line.strip()[:100],
-                    detection_method='entropy',
+                    detection_method=DetectionMethod.ENTROPY,
                     confidence=50
                 ))
 
