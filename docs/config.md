@@ -11,7 +11,7 @@ You can then apply **one or more overlay TOML files** via CLI:
 secrets-hunter . --config team-overrides.toml
 ```
 
-Overlays are applied **in the order provided**.
+Overlays are applied **in the order provided**. Overlays don’t replace files; they layer on top.
 
 ---
 
@@ -28,7 +28,7 @@ Overlays are applied **in the order provided**.
 These keys are treated as lists and are:
 
 1. **extended** (appended) from each file in load order
-2. **de-duplicated** (first occurrence kept)
+2. **deduplicated** (first occurrence kept)
 
 Applies to:
 - `exclude_patterns`
@@ -37,8 +37,10 @@ Applies to:
 - `ignore.extensions`
 - `ignore.dirs`
 
+Lists can’t be overridden — only appended and deduplicated (first occurrence wins). To undo something from an earlier file, use the matching `remove_*` key.
+
 ### Removals
-If you need to remove a previously-added item, use the corresponding `remove_*` key.
+If you need to remove a previously added item, use the corresponding `remove_*` key.
 
 Supported removal keys:
 
@@ -79,7 +81,9 @@ exclude_patterns = [
 ]
 ```
 
-Each entry is compiled as a regex. Plain strings like `"example"` will match anywhere.
+Each entry is compiled as a regex. A value like `"dummy"` is treated as the pattern `dummy`, so it can match as a substring. If you need an exact match, anchor it with `^...$` (for example: `^dummy$`).
+
+Deduplication and removals work by **exact string match** of the TOML entry.
 
 ### Secret keywords
 Used to boost confidence when a match is associated with a variable name suggesting a secret.
@@ -143,7 +147,7 @@ remove_ignore_dirs = ["dist"]
 ## Practical examples
 
 ### 1) Minimal overlay: add one pattern + ignore a dir
-
+**minimal.toml**
 ```toml
 [[secret_patterns]]
 name = "My Service Token"
@@ -152,23 +156,78 @@ pattern = '''\bmytok_[A-Za-z0-9]{32,}\b'''
 [ignore]
 dirs = ["vendor"]
 ```
+Run:
+
+```bash
+secrets-hunter . --config minimal.toml
+```
 
 ### 2) Override an existing pattern by name
-
+**override_gh_token.toml**
 ```toml
 [[secret_patterns]]
 name = "GitHub Token" # same name => overrides packaged one
 pattern = '''\bghp_[A-Za-z0-9]{36}\b'''
 flags = ["ASCII"]
 ```
+Run:
 
-### 3) Remove a built-in pattern (e.g. PEM/private keys)
+```bash
+secrets-hunter . --config override_gh_token.toml
+```
 
+### 3) Remove a built-in pattern
+**remove_private_keys.toml**
 ```toml
 remove_secret_patterns = ["Private Key"]
 ```
+Run:
 
-### 4) Make CI stricter but local dev more permissive
+```bash
+secrets-hunter . --config remove_private_keys.toml
+```
+
+### 4) Team baseline overlay
+**team.toml**
+```toml
+# 1) Add/override patterns (merged by name)
+[[secret_patterns]]
+name = "My Service Token"
+pattern = '''\bmytok_[A-Za-z0-9]{32,}\b'''
+
+# 2) Reduce noise
+exclude_patterns = [
+  # common placeholders
+  "example",
+  "placeholder",
+  "dummy",
+  "fake",
+  "mock",
+  # your internal non-secret format
+  '''\bACME_BUILD_ID_[0-9]{8}\b''',
+]
+
+# 3) Ignore rules
+[ignore]
+dirs = [
+  "node_modules",
+  "dist",
+  "build",
+  ".venv",
+]
+
+extensions = [
+  ".min.js",
+  ".map",
+]
+```
+Run:
+
+```bash
+secrets-hunter . --config team.toml
+```
+
+### 5) Make CI stricter but local dev more permissive
 
 **ci.toml**
 ```toml
@@ -188,6 +247,8 @@ Run:
 ```bash
 secrets-hunter . --config ci.toml --config local.toml
 ```
+
+Configs are layered in the order given (ci first, then local)
 
 ---
 
