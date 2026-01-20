@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 from typing import Optional
-from enum import IntEnum
+from enum import Enum
 
 
-class DetectionMethod(IntEnum):
-    PATTERN = 0
-    ENTROPY = 1
+class DetectionMethod(str, Enum):
+    PATTERN = "pattern"
+    ENTROPY = "entropy"
 
 
 @dataclass
