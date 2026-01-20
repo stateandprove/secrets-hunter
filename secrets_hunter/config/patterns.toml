@@ -1,0 +1,133 @@
+# False positive patterns
+exclude_patterns = [
+    '''^[0-9a-f]{32}$''',                   # MD5 hashes
+    '''^[0-9a-f]{40}$''',                   # SHA1 hashes
+    '''^[0-9a-f]{64}$''',                   # SHA256 hashes
+    '''^[0-9a-f]{128}$''',                  # SHA512 hashes
+    '''^[0-9a-f]{56}$''',                   # SHA224 hashes
+    '''^[0-9a-f]{96}$''',                   # SHA384 hashes
+    '''^[A-Za-z0-9+/]{27}=$''',             # Base64 encoded MD5
+    '''^[A-Za-z0-9+/]{43}=$''',             # Base64 encoded SHA256
+    '''^\$2[ayb]\$.{56}$''',                # Bcrypt hashes
+    '''^\$argon2id?\$''',                   # Argon2 hashes
+    '''^[0-9]+:[0-9a-f]+:[0-9a-f]+$''',     # PBKDF2 format
+    'test',
+    'example',
+    'sample',
+    'demo',
+    'placeholder',
+    '12345',
+    'abcde',
+    'aaaaa',
+    'xxxxx',
+    'dummy',
+    'fake',
+    'mock',
+    'testpass',
+    'blob'
+]
+
+# Keywords that suggest secrets
+secret_keywords = [
+    'secret',
+    'token',
+    'api_key',
+    'apikey',
+    'credential',
+    'auth',
+    'password',
+    'passwd',
+    'pwd',
+    'private',
+    'key'
+]
+
+# Patterns to detect variable assignments that might contain secrets
+assignment_patterns = [
+    # API_KEY = "abc123def456" or password: "secret123"
+    '''([a-zA-Z_][a-zA-Z0-9_]*)\s*[:=]\s*["']([^"']+)["']''',
+
+    # token = abc123def456xyz789 (unquoted, 20+ chars)
+    '''([a-zA-Z_][a-zA-Z0-9_]*)\s*[:=]\s*([a-zA-Z0-9+/=_\-]{20,})''',
+
+    # const apiKey = `sk_test_abc123` (JavaScript template literals)
+    '''([a-zA-Z_][a-zA-Z0-9_]*)\s*[:=]\s*`([^`]+)`''',
+
+    # export API_KEY="abc123" (shell scripts)
+    '''export\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*[:=]\s*["']([^"']+)["']''',
+
+    # set PASSWORD="secret123" (Windows batch/PowerShell)
+    '''set\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*[:=]\s*["']([^"']+)["']''',
+
+    # const SECRET_KEY = "abc123" (JavaScript/TypeScript)
+    '''const\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*[:=]\s*["']([^"']+)["']''',
+
+    # let authToken = "bearer_xyz" (JavaScript/TypeScript)
+    '''let\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*[:=]\s*["']([^"']+)["']''',
+
+    # var password = "secret" (JavaScript)
+    '''var\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*[:=]\s*["']([^"']+)["']''',
+
+    # define('DB_PASSWORD', 'secret123'); (PHP constants)
+    '''define\s*\(\s*["']([^"']+)["']\s*,\s*["']([^"']+)["']''',
+
+    # $api_key = "abc123"; (PHP/Perl variables)
+    '''\$([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*["']([^"']+)["']''',
+]
+
+# Regex patterns for known secret formats
+[[secret_patterns]]
+name = "AWS Access Key"
+pattern = '''\bAKIA[0-9A-Z]{16}\b'''
+
+[[secret_patterns]]
+name = "GitHub Token"
+pattern = '''\bgh[pousr]_[A-Za-z0-9]{36,}\b'''
+
+[[secret_patterns]]
+name = "Private Key"
+pattern = '''-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----'''
+
+[[secret_patterns]]
+name = "JWT Token"
+pattern = '''\beyJ[A-Za-z0-9_-]*\.eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*\b'''
+
+[[secret_patterns]]
+name = "Slack Token"
+pattern = '''\bxox[baprs]-[0-9A-Za-z-]{10,}\b'''
+
+[[secret_patterns]]
+name = "Google API Key"
+pattern = '''\bAIza[0-9A-Za-z_-]{35}\b'''
+
+[[secret_patterns]]
+name = "Stripe API Key"
+pattern = '''\bsk_live_[0-9a-zA-Z]{24,}\b'''
+
+[[secret_patterns]]
+name = "Twilio API Key"
+pattern = '''\bSK[0-9a-fA-F]{32}\b'''
+
+[[secret_patterns]]
+name = "SendGrid API Key"
+pattern = '''\bSG\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}\b'''
+
+[[secret_patterns]]
+name = "Mailchimp API Key"
+pattern = '''\b[0-9a-f]{32}-us[0-9]{1,2}\b'''
+
+[[secret_patterns]]
+name = "NPM Token"
+pattern = '''\bnpm_[A-Za-z0-9]{36}\b'''
+
+[[secret_patterns]]
+name = "PyPI Token"
+pattern = '''\bpypi-AgEIcHlwaS5vcmc[A-Za-z0-9_-]{50,}\b'''
+
+[[secret_patterns]]
+name = "Docker Hub Token"
+pattern = '''\bdckr_pat_[A-Za-z0-9_-]{40}\b'''
+
+[[secret_patterns]]
+name = "Database URL"
+pattern = '''(?i)(?:postgresql|mysql|mongodb|redis)://[^\s]+:[^\s]+@[^\s]+'''

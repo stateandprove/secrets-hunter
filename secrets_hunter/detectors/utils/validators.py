@@ -1,15 +1,15 @@
 import re
 
-from secrets_hunter.config.patterns import EXCLUDE_PATTERNS
-
 
 class FalsePositiveValidator:
-    @staticmethod
-    def is_valid(string: str) -> bool:
+    def __init__(self, exclude_patterns):
+        self.exclude_patterns = exclude_patterns
+
+    def is_valid(self, string: str) -> bool:
         """Check if string matches common false positive patterns"""
         string_lower = string.lower()
 
-        for pattern in EXCLUDE_PATTERNS:
+        for pattern in self.exclude_patterns:
             if re.search(pattern, string_lower):
                 return False
 

@@ -2,13 +2,24 @@ from typing import List
 
 from secrets_hunter.detectors.base import BaseDetector
 from secrets_hunter.models import Finding, DetectionMethod
+from secrets_hunter.config import CliArgs
 from secrets_hunter.detectors.utils import entropy as entropy_utils
 
 
 class EntropyDetector(BaseDetector):
     """Detect secrets using entropy analysis"""
 
-    def detect(self, line: str, line_num: int, filepath: str, strings: List[str]) -> List[Finding]:
+    def __init__(self, cli_args: CliArgs):
+        super().__init__()
+        self.cli_args = cli_args
+
+    def detect(
+        self,
+        line: str,
+        line_num: int,
+        filepath: str,
+        strings: List[str]
+    ) -> List[Finding]:
         findings = []
 
         for string in strings:
@@ -19,22 +30,24 @@ class EntropyDetector(BaseDetector):
             is_high_entropy = False
             string_type = None
 
-            if is_hex and entropy >= self.config.HEX_ENTROPY_THRESHOLD:
+            if is_hex and entropy >= self.cli_args.HEX_ENTROPY_THRESHOLD:
                 is_high_entropy = True
                 string_type = "High Entropy Hex String"
-            elif is_base64 and entropy >= self.config.B64_ENTROPY_THRESHOLD:
+            elif is_base64 and entropy >= self.cli_args.B64_ENTROPY_THRESHOLD:
                 is_high_entropy = True
                 string_type = "High Entropy Base64 String"
 
-            if is_high_entropy:
-                findings.append(Finding(
-                    file=self.format_filepath(filepath),
-                    line=line_num,
-                    type=string_type,
-                    match=string,
-                    context=line.strip()[:100],
-                    detection_method=DetectionMethod.ENTROPY,
-                    confidence=50
-                ))
+            if not is_high_entropy:
+                continue
+
+            findings.append(Finding(
+                file=self.format_filepath(filepath),
+                line=line_num,
+                type=string_type,
+                match=string,
+                context=line.strip()[:100],
+                detection_method=DetectionMethod.ENTROPY,
+                confidence=50
+            ))
 
         return findings

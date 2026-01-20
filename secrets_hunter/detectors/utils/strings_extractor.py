@@ -2,18 +2,20 @@ import re
 
 from typing import List
 
-from secrets_hunter.config.patterns import ASSIGNMENT_PATTERNS
-
 
 class StringsExtractor:
-    @staticmethod
-    def assignment_map(line: str) -> dict[str, set[str]]:
+    def __init__(self, assignment_patterns):
+        self.assignment_patterns = assignment_patterns
+
+    def assignment_map(self, line: str) -> dict[str, set[str]]:
         out: dict[str, set[str]] = {}
-        for pattern in ASSIGNMENT_PATTERNS:
+
+        for pattern in self.assignment_patterns:
             for match in pattern.finditer(line):
                 var = match.group(1).lower()
                 val = match.group(2).strip().strip("'\"")
                 out.setdefault(val, set()).add(var)
+
         return out
 
     @staticmethod
