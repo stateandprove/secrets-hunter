@@ -1,3 +1,4 @@
+import tomllib
 import re
 
 # Regex patterns for known secret formats
