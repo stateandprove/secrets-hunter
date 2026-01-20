@@ -225,7 +225,7 @@ def _config_key(user_configs: list[str | Path] | None) -> str:
 
 def get_runtime_config(user_configs: list[str | Path] | None = None, *, reload: bool = False) -> RuntimeConfig:
     """
-    Cached accessor. Pass reload=True to force reloading (useful for tests).
+    Cached accessor. Pass reload=True to force reloading.
     """
     key = _config_key(user_configs)
 
