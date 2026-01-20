@@ -1,38 +1,47 @@
-from typing import List
+from typing import List, Optional
+
 from secrets_hunter.models import Finding
 
 
 class ConsoleReporter:
+    WIDTH = 88
+
+    @staticmethod
+    def _truncate(s: Optional[str], max_len: int) -> str:
+        if not s:
+            return ""
+        s = s.replace("\n", "\\n")
+        return s if len(s) <= max_len else s[: max_len - 3] + "..."
+
     @staticmethod
     def format_report(findings: List[Finding]) -> None:
         if not findings:
             print("No secrets detected!")
             return
 
-        count = len(findings)
-        plural = "s" if count != 1 else ""
-        report = [f"\n⚠️  Found {count} potential secret{plural}:\n", "=" * 80]
+        total = len(findings)
+        plural = "s" if total != 1 else ""
 
-        for finding in findings:
-            report.append(f"\nFile: {finding.file}")
-            report.append(f"  Line {finding.line}: {finding.type}")
+        sep = "=" * ConsoleReporter.WIDTH
+        dash = "-" * ConsoleReporter.WIDTH
 
-            # Clean up match string (remove ellipsis if present)
-            match_string = finding.match.replace('...', '') if finding.match else ''
-            report.append(f"    Match: {match_string}")
+        lines = [f"\n⚠️  Found {total} potential secret{plural}:", sep]
 
-            # Show detection method info
-            if finding.detection_method == 'entropy':
-                report.append(f"    Detection: Entropy-based (Confidence: {finding.confidence}%)")
-                if finding.context_var:
-                    report.append(f"    Variable: {finding.context_var}")
-            else:
-                report.append(f"    Detection: {finding.detection_method} (Confidence: {finding.confidence}%)")
+        for i, f in enumerate(findings, 1):
+            lines.append(f"[{i}] {f.type} found at {f.file}:{f.line}")
+            lines.append(f"    Confidence: {f.confidence}%")
 
-            # Show context
-            if finding.context:
-                report.append(f"    Context: {finding.context}")
+            if f.detection_method == "entropy" and getattr(f, "context_var", None):
+                lines.append(f"    Variable:   {f.context_var}")
 
-            report.append("-" * 80)
-        
-        print("\n".join(report))
+            match_str = ConsoleReporter._truncate(f.match, 120)
+            if match_str:
+                lines.append(f"    Match:      {match_str}")
+
+            ctx_str = ConsoleReporter._truncate(f.context, 160)
+            if ctx_str:
+                lines.append(f"    Context:    {ctx_str}")
+
+            lines.append(dash)
+
+        print("\n".join(lines))
