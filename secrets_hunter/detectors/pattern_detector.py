@@ -4,7 +4,7 @@ from typing import List
 
 from secrets_hunter.detectors.base import BaseDetector
 from secrets_hunter.config.patterns import SECRET_PATTERNS
-from secrets_hunter.models import Finding
+from secrets_hunter.models import Finding, DetectionMethod
 
 
 class PatternDetector(BaseDetector):
@@ -22,7 +22,7 @@ class PatternDetector(BaseDetector):
                         type=secret_type,
                         match=string,
                         context=line.strip()[:100],
-                        detection_method='pattern',
+                        detection_method=DetectionMethod.PATTERN,
                         confidence=100
                     ))
 

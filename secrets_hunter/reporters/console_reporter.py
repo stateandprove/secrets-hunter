@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from secrets_hunter.models import Finding
+from secrets_hunter.models import Finding, DetectionMethod
 
 
 class ConsoleReporter:
@@ -31,7 +31,7 @@ class ConsoleReporter:
             lines.append(f"[{i}] {f.type} found at {f.file}:{f.line}")
             lines.append(f"    Confidence: {f.confidence}%")
 
-            if f.detection_method == "entropy" and getattr(f, "context_var", None):
+            if f.detection_method == DetectionMethod.ENTROPY and getattr(f, "context_var", None):
                 lines.append(f"    Variable:   {f.context_var}")
 
             match_str = ConsoleReporter._truncate(f.match, 120)
