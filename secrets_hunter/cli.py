@@ -5,13 +5,14 @@ import logging
 
 from pathlib import Path
 
+from secrets_hunter import __version__
 from secrets_hunter.scanner import SecretsHunter
 from secrets_hunter.config import settings, CliArgs, load_runtime_config
 from secrets_hunter.reporters.console_reporter import ConsoleReporter
 from secrets_hunter.reporters.json_reporter import JSONReporter
 
 
-logo_ascii = r"""
+logo_ascii = rf"""
      ________ ___      ___ ___       ________  ________      
     |\  _____\\  \    /  /|\  \     |\   ____\|\   ___  \    
     \ \  \__/\ \  \  /  / | \  \    \ \  \___|\ \  \\ \  \   
@@ -20,7 +21,7 @@ logo_ascii = r"""
        \ \__\   \ \__/ /     \ \_______\ \_______\ \__\\ \__\
         \|__|    \|__|/       \|_______|\|_______|\|__| \|__|
                        +==============+                      
-                       |Secrets Hunter|                      
+                       |Secrets Hunter|              v{__version__}
                        +==============+                      
 """
 
