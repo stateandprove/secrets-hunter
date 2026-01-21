@@ -38,7 +38,8 @@ class SARIFReporter:
                     "match": finding.match,
                     "detection_method": finding.detection_method,
                     "confidence": finding.confidence,
-                    "context_var": finding.context_var
+                    "context_var": finding.context_var,
+                    "severity": finding.severity
                 }
             }
             results.append(result)

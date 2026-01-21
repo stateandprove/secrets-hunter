@@ -1,3 +1,3 @@
-from .finding import Finding, DetectionMethod
+from .finding import Finding, DetectionMethod, Severity
 
-__all__ = ['Finding', 'DetectionMethod']
+__all__ = ['Finding', 'DetectionMethod', 'Severity']

@@ -11,7 +11,7 @@ from secrets_hunter.detectors.utils import StringsExtractor, validators
 from secrets_hunter.handlers.file_handler import FileHandler
 from secrets_hunter.handlers.progress import FileProgressBar, FolderProgressBar
 from secrets_hunter.handlers.output_formater import OutputFormatter
-from secrets_hunter.models import Finding
+from secrets_hunter.models import Finding, Severity
 
 logger = logging.getLogger(__name__)
 
@@ -86,9 +86,12 @@ class SecretsHunter:
             best = next((v for v in ordered if self.is_secret_var(v)), ordered[0])
 
             finding.context_var = best
+            finding.severity = str(Severity.MEDIUM.value)
+            finding.confidence = 75
 
             if self.is_secret_var(best):
                 finding.confidence = 100
+                finding.severity = str(Severity.CRITICAL.value)
 
         return all_line_findings
 

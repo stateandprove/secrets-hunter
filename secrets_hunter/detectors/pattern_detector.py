@@ -3,7 +3,7 @@ import re
 from typing import List
 
 from secrets_hunter.detectors.base import BaseDetector
-from secrets_hunter.models import Finding, DetectionMethod
+from secrets_hunter.models import Finding, DetectionMethod, Severity
 
 
 class PatternDetector(BaseDetector):
@@ -30,6 +30,7 @@ class PatternDetector(BaseDetector):
                 findings.append(Finding(
                     file=self.format_filepath(filepath),
                     line=line_num,
+                    severity=str(Severity.CRITICAL.value),
                     type=secret_type,
                     match=string,
                     context=line.strip()[:100],
