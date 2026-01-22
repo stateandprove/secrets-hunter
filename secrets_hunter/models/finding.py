@@ -3,6 +3,13 @@ from typing import Optional
 from enum import Enum
 
 
+class Severity(str, Enum):
+    CRITICAL = "CRITICAL"
+    HIGH = "HIGH"
+    MEDIUM = "MEDIUM"
+    LOW = "LOW"
+
+
 class DetectionMethod(str, Enum):
     PATTERN = "pattern"
     ENTROPY = "entropy"
@@ -15,6 +22,7 @@ class Finding:
     type: str
     match: str
     context: str
+    severity: str
     detection_method: DetectionMethod
     confidence: int
     context_var: Optional[str] = None

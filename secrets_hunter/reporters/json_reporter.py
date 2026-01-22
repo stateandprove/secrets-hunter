@@ -3,6 +3,7 @@ import logging
 
 from dataclasses import asdict
 from typing import List
+
 from secrets_hunter.models import Finding
 
 logger = logging.getLogger(__name__)

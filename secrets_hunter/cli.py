@@ -5,13 +5,15 @@ import logging
 
 from pathlib import Path
 
+from secrets_hunter import __version__
 from secrets_hunter.scanner import SecretsHunter
 from secrets_hunter.config import settings, CliArgs, load_runtime_config
 from secrets_hunter.reporters.console_reporter import ConsoleReporter
 from secrets_hunter.reporters.json_reporter import JSONReporter
+from secrets_hunter.reporters.sarif_reporter import SARIFReporter
 
 
-logo_ascii = r"""
+logo_ascii = rf"""
      ________ ___      ___ ___       ________  ________      
     |\  _____\\  \    /  /|\  \     |\   ____\|\   ___  \    
     \ \  \__/\ \  \  /  / | \  \    \ \  \___|\ \  \\ \  \   
@@ -19,9 +21,9 @@ logo_ascii = r"""
       \ \  \_| \ \    / /   \ \  \____\ \  \____\ \  \\ \  \ 
        \ \__\   \ \__/ /     \ \_______\ \_______\ \__\\ \__\
         \|__|    \|__|/       \|_______|\|_______|\|__| \|__|
-                       +==============+                      
-                       |Secrets Hunter|                      
-                       +==============+                      
+                    +=======================+                
+                    | Secrets Hunter v{__version__} |        
+                    +=======================+                
 """
 
 
@@ -63,6 +65,13 @@ class CLI:
             dest='json_output',
             metavar='FILE',
             help='Export results to JSON file'
+        )
+
+        p.add_argument(
+            '--sarif',
+            dest='sarif_output',
+            metavar='FILE',
+            help='Export results to SARIF file'
         )
 
         p.add_argument(
@@ -117,8 +126,8 @@ class CLI:
             (self.validate_min_length, [args.min_length]),
             (self.validate_config_files, [args.config]),
             (self.validate_min_confidence, [args.min_confidence]),
-            (self.validate_workers, [args.workers]),
-            (self.validate_json, [args.json_output])
+            (self.validate_output_file, [args.json_output, "json"]),
+            (self.validate_output_file, [args.sarif_output, "sarif"])
         ]
 
         for fn, params in validators:
@@ -154,14 +163,14 @@ class CLI:
         if value > max_workers:
             self.parser.error(f"--workers cannot exceed {max_workers}")
 
-    def validate_json(self, path):
+    def validate_output_file(self, path, flag_name):
         if not path:
             return
 
         parent = Path(path).parent
 
         if not parent.exists() or not parent.is_dir():
-            self.parser.error(f"--json parent dir does not exist: {parent}")
+            self.parser.error(f"--{flag_name} parent dir does not exist: {parent}")
 
 
 def main():
@@ -194,6 +203,8 @@ def main():
 
     if args.json_output:
         JSONReporter.export(findings, args.json_output)
+    elif args.sarif_output:
+        SARIFReporter.export(findings, args.sarif_output)
     else:
         ConsoleReporter.format_report(findings)
 

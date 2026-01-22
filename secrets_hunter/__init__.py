@@ -1,6 +1,7 @@
-__version__ = '0.0.1'
-__author__ = 'FVLCN.dev'
+from importlib.metadata import version
 
 from secrets_hunter.scanner import SecretsHunter
 
-__all__ = ['SecretsHunter']
+__version__ = version('secrets-hunter')
+__author__ = 'FVLCN.dev'
+__all__ = ['SecretsHunter', '__version__', '__author__']

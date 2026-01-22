@@ -1,7 +1,7 @@
 from typing import List
 
 from secrets_hunter.detectors.base import BaseDetector
-from secrets_hunter.models import Finding, DetectionMethod
+from secrets_hunter.models import Finding, DetectionMethod, Severity
 from secrets_hunter.config import CliArgs
 from secrets_hunter.detectors.utils import entropy as entropy_utils
 
@@ -43,11 +43,12 @@ class EntropyDetector(BaseDetector):
             findings.append(Finding(
                 file=self.format_filepath(filepath),
                 line=line_num,
+                severity=str(Severity.LOW.value),
                 type=string_type,
                 match=string,
                 context=line.strip()[:100],
                 detection_method=DetectionMethod.ENTROPY,
-                confidence=50
+                confidence=20
             ))
 
         return findings

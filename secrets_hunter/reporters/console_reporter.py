@@ -29,7 +29,7 @@ class ConsoleReporter:
 
         for i, f in enumerate(findings, 1):
             lines.append(f"[{i}] {f.type} found at {f.file}:{f.line}")
-            lines.append(f"    Confidence: {f.confidence}%")
+            lines.append(f"    Severity:   {f.severity} (confidence: {f.confidence}%)")
 
             if f.detection_method == DetectionMethod.ENTROPY and getattr(f, "context_var", None):
                 lines.append(f"    Variable:   {f.context_var}")
