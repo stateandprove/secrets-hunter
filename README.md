@@ -1,7 +1,7 @@
 # Secrets Hunter
 
 [![PyPI](.github/badges/pypi.svg)](https://pypi.org/project/secrets-hunter/)
-![Python](.github/badges/python.svg)
+[![Python](.github/badges/python.svg)](https://python.org/)
 
 **Secrets Hunter** is a lightweight, fully autonomous, and dependency-free scanner that detects secrets and sensitive information in your codebase.
 
