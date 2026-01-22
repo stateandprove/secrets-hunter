@@ -65,8 +65,8 @@ Example output:
 ========================================================================================
 [1] Stripe API Key found at app.py:11
     Severity:   CRITICAL (confidence: 100%)
-    Match:      sk_live_51abc123def456ghi789jkl012mno345
-    Context:    STRIPE_API_KEY = "sk_live_51abc123def456ghi789jkl012mno345"
+    Match:      sk_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    Context:    STRIPE_API_KEY = "sk_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 ----------------------------------------------------------------------------------------
 ```
 
