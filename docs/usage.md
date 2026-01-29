@@ -20,7 +20,7 @@ secrets-hunter [OPTIONS] [target]
 | `--json FILE`          |    path |         | Export results to a JSON file.                                      |
 | `--sarif FILE`         |    path |         | Export results to a SARIF file.                                     |
 | `--hex-entropy FLOAT`  |   float |   `3.0` | Hex entropy threshold. Lower = more sensitive / more noise.         |
-| `--b64-entropy FLOAT`  |   float |   `4.5` | Base64 entropy threshold. Lower = more sensitive / more noise.      |
+| `--b64-entropy FLOAT`  |   float |   `4.3` | Base64 entropy threshold. Lower = more sensitive / more noise.      |
 | `--min-length INT`     |     int |    `10` | Minimum candidate string length to consider.                        |
 | `--workers INT`        |     int |     `4` | Number of parallel workers when scanning directories.               |
 | `--log-level LEVEL`    |    enum |  `INFO` | Logging verbosity: `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`. |
