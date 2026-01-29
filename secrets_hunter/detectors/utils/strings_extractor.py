@@ -2,10 +2,18 @@ import re
 
 from typing import List
 
+from secrets_hunter.config import STRIP
 
 class StringsExtractor:
-    def __init__(self, assignment_patterns):
+    def __init__(self, assignment_patterns, min_token_length):
         self.assignment_patterns = assignment_patterns
+        self.min_token_length = min_token_length
+
+        # quoted strings (handles escapes)
+        self._quoted_re = re.compile(r'"((?:\\.|[^"\\]){5,})"|\'((?:\\.|[^\'\\]){5,})\'|`((?:\\.|[^`\\]){5,})`')
+
+        # any non-whitespace chunk with length >= min_token_length
+        self._chunk_re = re.compile(rf'\S{{{min_token_length},}}')
 
     def assignment_map(self, line: str) -> dict[str, set[str]]:
         out: dict[str, set[str]] = {}
@@ -13,44 +21,46 @@ class StringsExtractor:
         for pattern in self.assignment_patterns:
             for match in pattern.finditer(line):
                 var = match.group(1).lower()
-                val = match.group(2).strip().strip("'\"")
+                val = match.group(2).strip().strip(STRIP)
                 out.setdefault(val, set()).add(var)
 
         return out
 
-    @staticmethod
-    def extract(line: str) -> List[str]:
+    def extract(self, line: str) -> List[str]:
         """Extract all potential strings from a line"""
         strings = []
 
-        # Extract complete multi-line PEM keys
-        pem_pattern = r'-----BEGIN[^-]+-----.*?-----END[^-]+-----'
-        pem_matches = re.findall(pem_pattern, line, re.DOTALL)
-        strings.extend(pem_matches)
+        # 1) collect quoted strings + blank them out
+        line_wo_quotes = line
+        for m in self._quoted_re.finditer(line):
+            s = m.group(1) or m.group(2) or m.group(3)
+            if s:
+                strings.append(s)
+            # remove whole quoted span to avoid extracting them twice
+            start, end = m.span()
+            line_wo_quotes = line_wo_quotes[:start] + " " * (end - start) + line_wo_quotes[end:]
 
-        # Extract quoted strings
-        quote_patterns = [
-            r'"([^"]{4,})"',  # At least 4 chars to avoid noise
-            r"'([^']{4,})'",
-        ]
+        # 2) collect other long chunks (unquoted)
+        for chunk in self._chunk_re.findall(line_wo_quotes):
+            cleaned = chunk.strip(STRIP)
 
-        for pattern in quote_patterns:
-            matches = re.findall(pattern, line)
-            # Filter out matches that are part of already-captured PEM keys
-            for match in matches:
-                if not any(match in pem for pem in pem_matches):
-                    strings.append(match)
+            # If it's key=value or key:value, keep only RHS (value) when it's long enough
+            extracted_value = None
+            for sep in ("=", ":"):
+                if sep in cleaned:
+                    _, rhs = cleaned.split(sep, 1)
+                    rhs = rhs.strip(STRIP)
+                    rhs = rhs.lstrip("=")
+                    if len(rhs) >= self.min_token_length:
+                        extracted_value = rhs
+                        break
 
-        # Extract unquoted tokens that look like secrets (alphanumeric sequences)
-        token_pattern = r'\b([A-Za-z0-9_\-]{8,})\b'  # At least 8 chars
-        token_matches = re.findall(token_pattern, line)
+            if extracted_value:
+                strings.append(extracted_value)
+            else:
+                if len(cleaned) >= self.min_token_length:
+                    strings.append(cleaned)
 
-        # Filter out tokens that are part of PEM keys
-        for token in token_matches:
-            if not any(token in existing for existing in pem_matches + strings):
-                strings.append(token)
-
-        # Remove duplicates while preserving order
         seen = set()
         unique_strings = []
         for s in strings:

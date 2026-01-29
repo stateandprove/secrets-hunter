@@ -4,14 +4,14 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import List, Tuple
 
-from secrets_hunter.config import CliArgs, RuntimeConfig
+from secrets_hunter.config import CliArgs, RuntimeConfig, STRIP
 from secrets_hunter.detectors.entropy_detector import EntropyDetector
 from secrets_hunter.detectors.pattern_detector import PatternDetector
 from secrets_hunter.detectors.utils import StringsExtractor, validators
 from secrets_hunter.handlers.file_handler import FileHandler
 from secrets_hunter.handlers.progress import FileProgressBar, FolderProgressBar
 from secrets_hunter.handlers.output_formater import OutputFormatter
-from secrets_hunter.models import Finding, Severity
+from secrets_hunter.models import Finding, Severity, DetectionMethod
 
 logger = logging.getLogger(__name__)
 
@@ -26,18 +26,22 @@ class SecretsHunter:
             self.runtime_cfg.ignore_extensions,
             self.runtime_cfg.ignore_dirs
         )
-        self.validators = [
-            validators.FalsePositiveValidator(exclude_patterns=self.runtime_cfg.exclude_patterns),
-            validators.MinLengthValidator(min_string_length=self.cli_args.MIN_STRING_LENGTH)
-        ]
-        self.strings_extractor = StringsExtractor(self.runtime_cfg.assignment_patterns)
+        self.false_positive_validator = validators.FalsePositiveValidator(
+            exclude_patterns=self.runtime_cfg.exclude_patterns
+        )
+        self.strings_extractor = StringsExtractor(
+            assignment_patterns=self.runtime_cfg.assignment_patterns,
+            min_token_length=self.cli_args.MIN_STRING_LENGTH
+        )
 
-    def is_string_valid(self, string: str) -> bool:
-        return all(validator.is_valid(string) for validator in self.validators)
-
-    def is_secret_var(self, v: str) -> bool:
+    def is_secret_var(self, v: str) -> Tuple[bool, str]:
         v = v.lower()
-        return any(k in v for k in self.runtime_cfg.secret_keywords)
+
+        for k in self.runtime_cfg.secret_keywords:
+            if k in v:
+                return True, k
+
+        return False, ""
 
     def extract_findings_from_line(self, line_num: int, line: str, filepath: Path) -> List[Finding]:
         # Step 1: Extract all strings from a line
@@ -46,52 +50,74 @@ class SecretsHunter:
         if not all_strings:
             return []
 
-        # Step 2: Filter using validators
-        filtered_strings = [
-            string for string in all_strings if self.is_string_valid(string)
-        ]
+        # Step 2: Find high entropy strings
+        entropy_findings = self.entropy_detector.detect(
+            line, line_num, str(filepath), all_strings
+        )
 
-        if not filtered_strings:
+        # Step 3: Find pattern matching strings
+        pattern_findings = self.pattern_detector.detect(
+            line, line_num, str(filepath), all_strings
+        )
+
+        # Step 3.5: prioritize pattern findings (dedupe by match)
+        pattern_matches = {f.match for f in pattern_findings if f.match}
+
+        all_line_findings = list(pattern_findings)
+
+        for ef in entropy_findings:
+            if ef.match and ef.match not in pattern_matches:
+                all_line_findings.append(ef)
+
+        if not all_line_findings:
             return []
 
-        # Step 3: Find high entropy strings
-        entropy_findings = self.entropy_detector.detect(
-            line, line_num, str(filepath), filtered_strings
-        )
-
-        # Step 4: Find pattern matching strings
-        pattern_findings = self.pattern_detector.detect(
-            line, line_num, str(filepath), filtered_strings
-        )
-
-        all_line_findings = pattern_findings + entropy_findings
-
-        # Step 5: Check if in assignment for better confidence
+        # Step 4: Check if in assignment for better confidence
         ctx = self.strings_extractor.assignment_map(line)
 
         for finding in all_line_findings:
-            key = finding.match
+            match = finding.match
 
-            if not key:
+            if not match:
                 continue
 
-            vars_ = ctx.get(key)
+            match_valid, rejected_by = self.false_positive_validator.is_valid(match)
+            match_rejected = not match_valid
+            norm_match = match.strip().strip(STRIP)
+            vars_ = ctx.get(match) or ctx.get(norm_match)
 
             if not vars_:
+                if match_rejected:
+                    finding.reject(rejected_by + " in value")
                 continue
 
             # can be multiple vars in a single line,
             # pick the best var for display / single field
             ordered = sorted(vars_)
-            best = next((v for v in ordered if self.is_secret_var(v)), ordered[0])
+            best = next((v for v in ordered if self.is_secret_var(v)[0]), ordered[0])
 
             finding.context_var = best
+
+            if not match_valid:
+                finding.reject(rejected_by + " in value")
+                continue
+
             finding.severity = str(Severity.MEDIUM.value)
             finding.confidence = 75
 
-            if self.is_secret_var(best):
+            if finding.detection_method == DetectionMethod.ENTROPY:
+                finding.confidence_reasoning = "High Entropy with assignment context"
+
+            is_secret, kw = self.is_secret_var(best)
+
+            if is_secret:
                 finding.confidence = 100
                 finding.severity = str(Severity.CRITICAL.value)
+
+                if finding.detection_method == DetectionMethod.ENTROPY:
+                    finding.confidence_reasoning = (
+                        f"High Entropy in context of secret key/variable assignment - {kw}"
+                    )
 
         return all_line_findings
 

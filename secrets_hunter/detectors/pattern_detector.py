@@ -35,7 +35,8 @@ class PatternDetector(BaseDetector):
                     match=string,
                     context=line.strip()[:100],
                     detection_method=DetectionMethod.PATTERN,
-                    confidence=100
+                    confidence=100,
+                    confidence_reasoning="Pattern Match"
                 ))
 
         return findings

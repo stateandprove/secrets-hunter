@@ -26,6 +26,7 @@ class EntropyDetector(BaseDetector):
             entropy = entropy_utils.calculate_shannon_entropy(string)
             is_hex = entropy_utils.is_hex_string(string)
             is_base64 = entropy_utils.is_base64_string(string)
+            is_base64url = entropy_utils.is_base64url_string(string)
 
             is_high_entropy = False
             string_type = None
@@ -33,7 +34,7 @@ class EntropyDetector(BaseDetector):
             if is_hex and entropy >= self.cli_args.HEX_ENTROPY_THRESHOLD:
                 is_high_entropy = True
                 string_type = "High Entropy Hex String"
-            elif is_base64 and entropy >= self.cli_args.B64_ENTROPY_THRESHOLD:
+            elif (is_base64 or is_base64url) and entropy >= self.cli_args.B64_ENTROPY_THRESHOLD:
                 is_high_entropy = True
                 string_type = "High Entropy Base64 String"
 
@@ -48,7 +49,8 @@ class EntropyDetector(BaseDetector):
                 match=string,
                 context=line.strip()[:100],
                 detection_method=DetectionMethod.ENTROPY,
-                confidence=20
+                confidence=20,
+                confidence_reasoning="High Entropy without context"
             ))
 
         return findings
