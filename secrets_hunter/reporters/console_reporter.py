@@ -25,13 +25,13 @@ class ConsoleReporter:
         sep = "=" * ConsoleReporter.WIDTH
         dash = "-" * ConsoleReporter.WIDTH
 
-        lines = [f"\n⚠️  Found {total} potential secret{plural}:", sep]
+        lines = [f"\nFound {total} potential secret{plural}:", sep]
 
         for i, f in enumerate(findings, 1):
             lines.append(f"[{i}] {f.type} found at {f.file}:{f.line}")
-            lines.append(f"    Severity:   {f.severity} (confidence: {f.confidence}%)")
+            lines.append(f"    Severity:   {f.severity} (confidence: {f.confidence}%, reasoning: {f.confidence_reasoning})")
 
-            if f.detection_method == DetectionMethod.ENTROPY and getattr(f, "context_var", None):
+            if getattr(f, "context_var", None):
                 lines.append(f"    Variable:   {f.context_var}")
 
             match_str = ConsoleReporter._truncate(f.match, 120)

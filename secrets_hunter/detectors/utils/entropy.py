@@ -6,6 +6,7 @@ from typing import Set
 
 HEX_CHARS: Set[str] = set(string.hexdigits)
 BASE64_CHARS: Set[str] = set(string.ascii_letters + string.digits) | {"+", "/", "="}
+BASE64URL_CHARS: Set[str] = BASE64_CHARS | {"-", "_"}
 
 
 def calculate_shannon_entropy(input_string: str) -> float:
@@ -30,3 +31,6 @@ def is_hex_string(s: str) -> bool:
 
 def is_base64_string(s: str) -> bool:
     return bool(s) and all(c in BASE64_CHARS for c in s)
+
+def is_base64url_string(s: str) -> bool:
+    return bool(s) and all(c in BASE64URL_CHARS for c in s)

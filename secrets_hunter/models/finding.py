@@ -23,6 +23,12 @@ class Finding:
     match: str
     context: str
     severity: str
+    confidence_reasoning: str
     detection_method: DetectionMethod
     confidence: int
     context_var: Optional[str] = None
+
+    def reject(self, confidence_reasoning: str):
+        self.severity = str(Severity.LOW.value)
+        self.confidence = 0
+        self.confidence_reasoning = confidence_reasoning
