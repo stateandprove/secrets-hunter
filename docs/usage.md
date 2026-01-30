@@ -41,7 +41,8 @@ Example output:
 ```bash
 ========================================================================================
 [1] Stripe API Key found at app.py:11
-    Severity:   CRITICAL (confidence: 100%)
+    Severity:   CRITICAL (confidence: 100%, reasoning: Pattern Match)
+    Variable:   stripe_api_key
     Match:      ***MASKED***
     Context:    ***MASKED***
 ----------------------------------------------------------------------------------------
@@ -64,7 +65,8 @@ Example output:
 ```bash
 ========================================================================================
 [1] Stripe API Key found at app.py:11
-    Severity:   CRITICAL (confidence: 100%)
+    Severity:   CRITICAL (confidence: 100%, reasoning: Pattern Match)
+    Variable:   stripe_api_key
     Match:      sk_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
     Context:    STRIPE_API_KEY = "sk_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 ----------------------------------------------------------------------------------------
@@ -87,6 +89,7 @@ Example output:
         "match": "***MASKED***",
         "context": "***MASKED***",
         "severity": "CRITICAL",
+        "confidence_reasoning": "Pattern Match",
         "detection_method": "pattern",
         "confidence": 100,
         "context_var": "stripe_api_key"
