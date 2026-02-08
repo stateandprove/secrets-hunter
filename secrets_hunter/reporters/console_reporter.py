@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from secrets_hunter.models import Finding, DetectionMethod
+from secrets_hunter.models import Finding
 
 
 class ConsoleReporter:
