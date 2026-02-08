@@ -7,7 +7,7 @@ from typing import List, Tuple
 from secrets_hunter.config import CliArgs, RuntimeConfig, STRIP
 from secrets_hunter.detectors.entropy_detector import EntropyDetector
 from secrets_hunter.detectors.pattern_detector import PatternDetector
-from secrets_hunter.detectors.utils import StringsExtractor, validators
+from secrets_hunter.utils import StringsExtractor, validators
 from secrets_hunter.handlers.file_handler import FileHandler
 from secrets_hunter.handlers.progress import FileProgressBar, FolderProgressBar
 from secrets_hunter.handlers.output_formater import OutputFormatter
@@ -27,7 +27,8 @@ class SecretsHunter:
             self.runtime_cfg.ignore_dirs
         )
         self.false_positive_validator = validators.FalsePositiveValidator(
-            exclude_patterns=self.runtime_cfg.exclude_patterns
+            exclude_patterns=self.runtime_cfg.exclude_patterns,
+            exclude_keywords=self.runtime_cfg.exclude_keywords
         )
         self.strings_extractor = StringsExtractor(
             assignment_patterns=self.runtime_cfg.assignment_patterns,
@@ -72,7 +73,7 @@ class SecretsHunter:
         if not all_line_findings:
             return []
 
-        # Step 4: Check if in assignment for better confidence
+        # Step 4: Check the assignment context
         ctx = self.strings_extractor.assignment_map(line)
 
         for finding in all_line_findings:
@@ -81,8 +82,7 @@ class SecretsHunter:
             if not match:
                 continue
 
-            match_valid, rejected_by = self.false_positive_validator.is_valid(match)
-            match_rejected = not match_valid
+            match_rejected, rejected_by = self.false_positive_validator.check_rejection_for_value(match)
             norm_match = match.strip().strip(STRIP)
             vars_ = ctx.get(match) or ctx.get(norm_match)
 
@@ -91,17 +91,12 @@ class SecretsHunter:
                     finding.reject(rejected_by + " in value")
                 continue
 
-            # can be multiple vars in a single line,
+            # can be multiple keys for a single secret,
             # pick the best var for display / single field
-            ordered = sorted(vars_)
-            best = next((v for v in ordered if self.is_secret_var(v)[0]), ordered[0])
+            vars_ordered = sorted(vars_)
+            best = next((v for v in vars_ordered if self.is_secret_var(v)[0]), vars_ordered[0])
 
             finding.context_var = best
-
-            if not match_valid:
-                finding.reject(rejected_by + " in value")
-                continue
-
             finding.severity = str(Severity.MEDIUM.value)
             finding.confidence = 75
 
@@ -118,6 +113,17 @@ class SecretsHunter:
                     finding.confidence_reasoning = (
                         f"High Entropy in context of secret key/variable assignment - {kw}"
                     )
+
+                continue
+
+            if match_rejected:
+                finding.reject(rejected_by + " in value")
+                continue
+
+            kw_rejected, kw_excluded_by = self.false_positive_validator.check_rejection_for_keywords(vars_ordered)
+
+            if kw_rejected:
+                finding.reject(kw_excluded_by + " in keyword/variable")
 
         return all_line_findings
 

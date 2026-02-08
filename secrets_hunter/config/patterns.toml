@@ -27,6 +27,11 @@ exclude_patterns = [
     'blob'
 ]
 
+exclude_keywords = [
+    'hash',
+    'checksum'
+]
+
 # Keywords that suggest secrets
 secret_keywords = [
     'secret',

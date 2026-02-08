@@ -3,7 +3,7 @@ from typing import List
 from secrets_hunter.detectors.base import BaseDetector
 from secrets_hunter.models import Finding, DetectionMethod, Severity
 from secrets_hunter.config import CliArgs
-from secrets_hunter.detectors.utils import entropy as entropy_utils
+from secrets_hunter.utils import entropy as entropy_utils
 
 
 class EntropyDetector(BaseDetector):

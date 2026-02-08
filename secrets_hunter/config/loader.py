@@ -21,6 +21,7 @@ FLAG_MAP: dict[str, int] = {
 class RuntimeConfig:
     secret_patterns: dict[str, re.Pattern]
     exclude_patterns: list[re.Pattern]
+    exclude_keywords: list[str]
     secret_keywords: list[str]
     assignment_patterns: list[re.Pattern]
     ignore_extensions: set[str]
@@ -116,6 +117,7 @@ def load_runtime_config(user_configs: list[str | Path] | None = None) -> Runtime
     # aggregated (raw)
     secret_patterns_by_name: dict[str, dict[str, Any]] = {}
     exclude_patterns: list[str] = []
+    exclude_keywords: list[str] = []
     secret_keywords: list[str] = []
     assignment_patterns: list[str] = []
     ignore_ext: list[str] = []
@@ -136,12 +138,15 @@ def load_runtime_config(user_configs: list[str | Path] | None = None) -> Runtime
         if rm_dirs:
             ignore_dirs = [x for x in ignore_dirs if x not in rm_dirs]
 
-        rm_excl = set(require_string_list(data, "remove_exclude_patterns", f))
+        rm_excl_p = set(require_string_list(data, "remove_exclude_patterns", f))
+        rm_excl_kw = set(require_string_list(data, "remove_exclude_keywords", f))
         rm_kw = set(require_string_list(data, "remove_secret_keywords", f))
         rm_asg = set(require_string_list(data, "remove_assignment_patterns", f))
 
-        if rm_excl:
-            exclude_patterns = [x for x in exclude_patterns if x not in rm_excl]
+        if rm_excl_p:
+            exclude_patterns = [x for x in exclude_patterns if x not in rm_excl_p]
+        if rm_excl_kw:
+            exclude_keywords = [x for x in exclude_keywords if x not in rm_excl_kw]
         if rm_kw:
             secret_keywords = [x for x in secret_keywords if x not in rm_kw]
         if rm_asg:
@@ -174,6 +179,7 @@ def load_runtime_config(user_configs: list[str | Path] | None = None) -> Runtime
 
         # lists
         exclude_patterns.extend(require_string_list(data, "exclude_patterns", f))
+        exclude_keywords.extend(require_string_list(data, "exclude_keywords", f))
         secret_keywords.extend(require_string_list(data, "secret_keywords", f))
         assignment_patterns.extend(require_string_list(data, "assignment_patterns", f))
 
@@ -184,6 +190,7 @@ def load_runtime_config(user_configs: list[str | Path] | None = None) -> Runtime
 
     # deduplication
     exclude_patterns = deduplicate_keep_order(exclude_patterns)
+    exclude_keywords = deduplicate_keep_order(exclude_keywords)
     secret_keywords = deduplicate_keep_order(secret_keywords)
     assignment_patterns = deduplicate_keep_order(assignment_patterns)
     ignore_ext = deduplicate_keep_order(ignore_ext)
@@ -194,7 +201,7 @@ def load_runtime_config(user_configs: list[str | Path] | None = None) -> Runtime
         name: re_compile(v["pattern"], v.get("flags"), source=f"secret_patterns[{name}]")
         for name, v in secret_patterns_by_name.items()
     }
-    compiled_exclude = [
+    compiled_exclude_patterns = [
         re_compile(p, source=f"exclude_patterns[{i}]")
         for i, p in enumerate(exclude_patterns)
     ]
@@ -205,7 +212,8 @@ def load_runtime_config(user_configs: list[str | Path] | None = None) -> Runtime
 
     return RuntimeConfig(
         secret_patterns=compiled_secret_patterns,
-        exclude_patterns=compiled_exclude,
+        exclude_patterns=compiled_exclude_patterns,
+        exclude_keywords=exclude_keywords,
         secret_keywords=secret_keywords,
         assignment_patterns=compiled_assignment,
         ignore_extensions=set(ignore_ext),
