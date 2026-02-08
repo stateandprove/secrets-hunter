@@ -33,6 +33,7 @@ These keys are treated as lists and are:
 Applies to:
 - `exclude_patterns`
 - `secret_keywords`
+- `exclude_keywords`
 - `assignment_patterns`
 - `ignore.extensions`
 - `ignore.dirs`
@@ -47,6 +48,7 @@ Supported removal keys:
 - `remove_secret_patterns`
 - `remove_exclude_patterns`
 - `remove_secret_keywords`
+- `remove_exclude_keywords`
 - `remove_assignment_patterns`
 - `remove_ignore_extensions`
 - `remove_ignore_dirs`
@@ -97,6 +99,16 @@ secret_keywords = [
 ]
 ```
 
+### Exclude keywords
+Used to reject findings basing on keyword/variable name.
+
+```toml
+exclude_keywords = [
+  "integrity",
+  "hash"
+]
+```
+
 ### Assignment patterns
 Used to extract candidate values from code lines (e.g. `API_KEY="..."`).
 
@@ -131,6 +143,7 @@ These remove by **exact string match**:
 ```toml
 remove_exclude_patterns = ["dummy", "example"]
 remove_secret_keywords = ["key"]
+remove_exclude_keywords = ["hash"]
 remove_assignment_patterns = [
   '''set\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*[:=]\s*["']([^"']+)["']''',
 ]
@@ -190,12 +203,7 @@ secrets-hunter . --config remove_private_keys.toml
 ### 4) Team baseline overlay
 **team.toml**
 ```toml
-# 1) Add/override patterns (merged by name)
-[[secret_patterns]]
-name = "My Service Token"
-pattern = '''\bmytok_[A-Za-z0-9]{32,}\b'''
-
-# 2) Reduce noise
+# 1) Reduce noise
 exclude_patterns = [
   # common placeholders
   "example",
@@ -206,6 +214,11 @@ exclude_patterns = [
   # your internal non-secret format
   '''\bACME_BUILD_ID_[0-9]{8}\b''',
 ]
+
+# 2) Add/override patterns (merged by name)
+[[secret_patterns]]
+name = "My Service Token"
+pattern = '''\bmytok_[A-Za-z0-9]{32,}\b'''
 
 # 3) Ignore rules
 [ignore]
