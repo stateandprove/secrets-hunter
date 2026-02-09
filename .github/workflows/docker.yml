@@ -53,7 +53,9 @@ jobs:
         id: tags
         shell: bash
         run: |
-          IMAGE="ghcr.io/${{ github.repository }}"
+          REPO="${{ github.repository }}"
+          REPO_LC="$(echo "$REPO" | tr '[:upper:]' '[:lower:]')"
+          IMAGE="ghcr.io/$REPO_LC"
           REF="${{ steps.cfg.outputs.ref }}"
           SHA="sha-${GITHUB_SHA::12}"
 
