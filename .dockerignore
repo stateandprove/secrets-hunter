@@ -1,0 +1,9 @@
+!Dockerfile
+!.dockerignore
+
+!pyproject.toml
+!README.md
+!LICENSE
+
+!secrets_hunter/
+!secrets_hunter/**
