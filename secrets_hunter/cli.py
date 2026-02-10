@@ -133,15 +133,13 @@ class CLI:
         self.fill_args(showconfig_parser, showconfig_args)
 
     def parse(self):
+        known_args = ['scan', 'showconfig', '-h', '--help']
+
         # If no args or first arg isn't a subcommand, inject 'scan'
-        if len(sys.argv) == 1 or (len(sys.argv) > 1 and sys.argv[1] not in ['scan', 'showconfig']):
+        if len(sys.argv) == 1 or (len(sys.argv) > 1 and sys.argv[1] not in known_args):
             sys.argv.insert(1, 'scan')
 
         args = self.parser.parse_args()
-
-        if args.command is None:
-            args.command = 'scan'
-
         self.validate_config_files(args.config)
 
         if args.command == 'showconfig':
