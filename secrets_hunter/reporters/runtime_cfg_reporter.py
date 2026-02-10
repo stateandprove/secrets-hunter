@@ -14,8 +14,9 @@ class RuntimeConfigReporter(BaseConsoleReporter):
         "secret_keywords": ("simple_list", None),
         "exclude_keywords": ("simple_list", None),
         "assignment_patterns": ("list", None),
+        "ignore_files": ("compact_list", 4),
         "ignore_extensions": ("compact_list", 6),
-        "ignore_dirs": ("compact_list", 4),
+        "ignore_dirs": ("compact_list", 4)
     }
 
     @staticmethod

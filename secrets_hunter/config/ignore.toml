@@ -1,4 +1,8 @@
 [ignore]
+files = [
+    "package-lock.json"
+]
+
 extensions = [
     ".exe",
     ".dll",

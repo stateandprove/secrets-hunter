@@ -24,6 +24,7 @@ class RuntimeConfig:
     exclude_keywords: list[str]
     secret_keywords: list[str]
     assignment_patterns: list[re.Pattern]
+    ignore_files: set[str]
     ignore_extensions: set[str]
     ignore_dirs: set[str]
 
@@ -120,6 +121,7 @@ def load_runtime_config(user_configs: list[str | Path] | None = None) -> Runtime
     exclude_keywords: list[str] = []
     secret_keywords: list[str] = []
     assignment_patterns: list[str] = []
+    ignore_files: list[str] = []
     ignore_ext: list[str] = []
     ignore_dirs: list[str] = []
 
@@ -130,9 +132,12 @@ def load_runtime_config(user_configs: list[str | Path] | None = None) -> Runtime
         for name in require_string_list(data, "remove_secret_patterns", f):
             secret_patterns_by_name.pop(name, None)
 
+        rm_files = set(require_string_list(data, "remove_ignore_files", f))
         rm_ext = set(require_string_list(data, "remove_ignore_extensions", f))
         rm_dirs = set(require_string_list(data, "remove_ignore_dirs", f))
 
+        if rm_files:
+            ignore_files = [x for x in ignore_dirs if x not in rm_files]
         if rm_ext:
             ignore_ext = [x for x in ignore_ext if x not in rm_ext]
         if rm_dirs:
@@ -185,6 +190,7 @@ def load_runtime_config(user_configs: list[str | Path] | None = None) -> Runtime
 
         # ignore
         ig = require_table(data.get("ignore"), "ignore", f)
+        ignore_files.extend(require_string_list(ig, "files", f))
         ignore_ext.extend(require_string_list(ig, "extensions", f))
         ignore_dirs.extend(require_string_list(ig, "dirs", f))
 
@@ -193,6 +199,7 @@ def load_runtime_config(user_configs: list[str | Path] | None = None) -> Runtime
     exclude_keywords = deduplicate_keep_order(exclude_keywords)
     secret_keywords = deduplicate_keep_order(secret_keywords)
     assignment_patterns = deduplicate_keep_order(assignment_patterns)
+    ignore_files = deduplicate_keep_order(ignore_files)
     ignore_ext = deduplicate_keep_order(ignore_ext)
     ignore_dirs = deduplicate_keep_order(ignore_dirs)
 
@@ -216,6 +223,7 @@ def load_runtime_config(user_configs: list[str | Path] | None = None) -> Runtime
         exclude_keywords=exclude_keywords,
         secret_keywords=secret_keywords,
         assignment_patterns=compiled_assignment,
+        ignore_files=set(ignore_files),
         ignore_extensions=set(ignore_ext),
         ignore_dirs=set(ignore_dirs),
     )

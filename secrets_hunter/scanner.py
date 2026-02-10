@@ -23,6 +23,7 @@ class SecretsHunter:
         self.pattern_detector = PatternDetector(self.runtime_cfg.secret_patterns)
         self.entropy_detector = EntropyDetector(self.cli_args)
         self.file_handler = FileHandler(
+            self.runtime_cfg.ignore_files,
             self.runtime_cfg.ignore_extensions,
             self.runtime_cfg.ignore_dirs
         )

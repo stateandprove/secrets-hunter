@@ -98,6 +98,7 @@ showconfig_args = {
             'secret_keywords',
             'exclude_keywords',
             'assignment_patterns',
+            'ignore_files',
             'ignore_extensions',
             'ignore_dirs'
         ]
