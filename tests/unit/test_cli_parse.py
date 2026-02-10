@@ -1,4 +1,6 @@
 import io
+import sys
+import shlex
 import unittest
 import tempfile
 
@@ -13,10 +15,12 @@ from secrets_hunter.config import settings
 class TestCLIParse(unittest.TestCase):
     @staticmethod
     def parse_ok(argv):
+        print(f"\n[cli-test] cmd  = {shlex.join(argv)}", file=sys.__stderr__)
         with patch("sys.argv", argv):
             return CLI().parse()
 
     def parse_expect_exit(self, argv):
+        print(f"\n[cli-test] cmd  = {shlex.join(argv)}", file=sys.__stderr__)
         out_buf = io.StringIO()
         err_buf = io.StringIO()
 
@@ -75,7 +79,7 @@ class TestCLIParse(unittest.TestCase):
         self.assertEqual(args.workers, 2)
 
     def test_unknown_word_is_treated_as_scan_target(self):
-        # current design: any unknown first token becomes target (scan injected)
+        # any unknown first token becomes target (scan injected)
         args = self.parse_ok(["secrets-hunter", "not_a_command"])
         self.assertEqual(args.command, "scan")
         self.assertEqual(args.target, "not_a_command")
