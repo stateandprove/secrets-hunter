@@ -8,8 +8,8 @@ version = "0.2.0"
 description = "Detect secrets and sensitive information in your codebase"
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.11"
-
-license = { file = "LICENSE" }
+license = "MIT"
+license-files = ["LICENSE"]
 keywords = ["security", "secrets", "scanner", "git", "ci"]
 authors = [
     { name = "FVLCN-dev", "email" = "alex@fvlcn.dev"}
