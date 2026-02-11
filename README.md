@@ -83,21 +83,22 @@ See the [usage docs](docs/usage.md) for all flags and more examples.
 
 ## Configuration
 
-Secrets Hunter ships with built-in packaged defaults and supports **overlay configs**.
+Secrets Hunter ships with built-in packaged defaults. You can display them using CLI:
+```bash
+secrets-hunter showconfig
+```
 
-Example (team baseline overlay):
-
+Configuration can be customized using overlay config files. Example (team baseline overlay):
 ```bash
 secrets-hunter . --config team.toml
 ```
 
 Multiple overlays are applied **in the order provided**:
-
 ```bash
 secrets-hunter . --config ci.toml --config local.toml
 ```
 
-A full description and usage examples of the configuration are available in [Configuration docs](docs/config.md).
+A full description and usage examples are available in [Configuration docs](docs/config.md).
 
 ## License
 
