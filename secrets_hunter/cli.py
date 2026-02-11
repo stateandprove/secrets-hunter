@@ -11,6 +11,7 @@ from secrets_hunter.config import settings, CliArgs, load_runtime_config
 from secrets_hunter.reporters.console_reporter import ConsoleReporter
 from secrets_hunter.reporters.json_reporter import JSONReporter
 from secrets_hunter.reporters.sarif_reporter import SARIFReporter
+from secrets_hunter.reporters.runtime_cfg_reporter import RuntimeConfigReporter
 
 
 logo_ascii = rf"""
@@ -26,6 +27,84 @@ logo_ascii = rf"""
                     +=======================+                
 """
 
+scan_args = {
+    "target": {
+        "nargs": "?",
+        "default": ".",
+        "help": "File or directory to scan (default: current directory)",
+    },
+    "--reveal-findings": {
+        "action": "store_true",
+        "default": CliArgs.REVEAL_FINDINGS,
+        "help": f"Reveal findings in output (default: {CliArgs.REVEAL_FINDINGS})"
+    },
+    "--config": {
+        "action": "append",
+        "default": None,
+        "metavar": "FILE",
+        "help": "Path to TOML overlay config. Can be used multiple times."
+    },
+    "--json": {
+        "dest": "json_output",
+        "metavar": "FILE",
+        "help": "Export results to JSON file"
+    },
+    "--sarif": {
+        "dest": "sarif_output",
+        "metavar": "FILE",
+        "help": "Export results to SARIF file"
+    },
+    "--hex-entropy": {
+        "type": float,
+        "default": CliArgs.HEX_ENTROPY_THRESHOLD,
+        "help": f"Hex entropy threshold (default: {CliArgs.HEX_ENTROPY_THRESHOLD})"
+    },
+    "--b64-entropy": {
+        "type": float,
+        "default": CliArgs.B64_ENTROPY_THRESHOLD,
+        "help": f"Base64 entropy threshold (default: {CliArgs.B64_ENTROPY_THRESHOLD})"
+    },
+    "--min-length": {
+        "type": int,
+        "default": CliArgs.MIN_STRING_LENGTH,
+        "help": f"Minimum string length (default: {CliArgs.MIN_STRING_LENGTH})"
+    },
+    "--workers": {
+        "type": int,
+        "default": CliArgs.MAX_WORKERS,
+        "help": f"Number of parallel workers (default: {CliArgs.MAX_WORKERS})"
+    },
+    "--log-level": {
+        "type": str,
+        "choices": ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+        "default": CliArgs.LOG_LEVEL,
+        "help": f"Log level (default: {CliArgs.LOG_LEVEL})"
+    },
+    "--min-confidence": {
+        "type": int,
+        "default": CliArgs.MIN_CONFIDENCE,
+        "help": f"Minimum confidence of findings to display (default: {CliArgs.MIN_CONFIDENCE})"
+    }
+}
+
+showconfig_args = {
+    "--config": scan_args["--config"],
+    "sections": {
+        "nargs": "*",
+        "help": "Specific sections to display. Shows all if omitted.",
+        "choices": [
+            'secret_patterns',
+            'exclude_patterns',
+            'secret_keywords',
+            'exclude_keywords',
+            'assignment_patterns',
+            'ignore_files',
+            'ignore_extensions',
+            'ignore_dirs'
+        ]
+    }
+}
+
 
 class CLI:
     def __init__(self):
@@ -35,96 +114,43 @@ class CLI:
         )
         self.add_args()
 
+    @staticmethod
+    def fill_args(parser, args_dict):
+        for arg_name, kwargs in args_dict.items():
+            parser.add_argument(arg_name, **kwargs)
+
     def add_args(self):
-        p = self.parser
-
-        p.add_argument(
-            "target",
-            nargs="?",
-            default=".",
-            help="File or directory to scan (default: current directory)",
+        subparsers = self.parser.add_subparsers(dest='command', help='Available commands')
+        scan_parser = subparsers.add_parser(
+            'scan',
+            help='Scan files for secrets (default command)',
+            formatter_class=argparse.RawDescriptionHelpFormatter
         )
-
-        p.add_argument(
-            "--reveal-findings",
-            action="store_true",
-            default=CliArgs.REVEAL_FINDINGS,
-            help=f"Reveal findings in output (default: {CliArgs.REVEAL_FINDINGS})"
+        self.fill_args(scan_parser, scan_args)
+        showconfig_parser = subparsers.add_parser(
+            'showconfig',
+            help='Display the current runtime configuration'
         )
-
-        p.add_argument(
-            "--config",
-            action="append",
-            default=None,
-            metavar="FILE",
-            help="Path to TOML overlay config. Can be used multiple times."
-        )
-
-        p.add_argument(
-            '--json',
-            dest='json_output',
-            metavar='FILE',
-            help='Export results to JSON file'
-        )
-
-        p.add_argument(
-            '--sarif',
-            dest='sarif_output',
-            metavar='FILE',
-            help='Export results to SARIF file'
-        )
-
-        p.add_argument(
-            '--hex-entropy',
-            type=float,
-            default=CliArgs.HEX_ENTROPY_THRESHOLD,
-            help=f'Hex entropy threshold (default: {CliArgs.HEX_ENTROPY_THRESHOLD})'
-        )
-
-        p.add_argument(
-            '--b64-entropy',
-            type=float,
-            default=CliArgs.B64_ENTROPY_THRESHOLD,
-            help=f'Base64 entropy threshold (default: {CliArgs.B64_ENTROPY_THRESHOLD})'
-        )
-
-        p.add_argument(
-            '--min-length',
-            type=int,
-            default=CliArgs.MIN_STRING_LENGTH,
-            help=f'Minimum string length (default: {CliArgs.MIN_STRING_LENGTH})'
-        )
-
-        p.add_argument(
-            '--workers',
-            type=int,
-            default=CliArgs.MAX_WORKERS,
-            help=f'Number of parallel workers (default: {CliArgs.MAX_WORKERS})'
-        )
-
-        p.add_argument(
-            '--log-level',
-            type=str,
-            choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-            default=CliArgs.LOG_LEVEL,
-            help=f'Log level (default: {CliArgs.LOG_LEVEL})'
-        )
-
-        p.add_argument(
-            '--min-confidence',
-            type=int,
-            default=CliArgs.MIN_CONFIDENCE,
-            help=f'Minimum confidence (default: {CliArgs.MIN_CONFIDENCE})'
-        )
+        self.fill_args(showconfig_parser, showconfig_args)
 
     def parse(self):
+        known_args = ['scan', 'showconfig', '-h', '--help']
+
+        # If no args or first arg isn't a subcommand, inject 'scan'
+        if len(sys.argv) == 1 or (len(sys.argv) > 1 and sys.argv[1] not in known_args):
+            sys.argv.insert(1, 'scan')
+
         args = self.parser.parse_args()
+        self.validate_config_files(args.config)
+
+        if args.command == 'showconfig':
+            return args
 
         validators = [
             (self.validate_entropy, [args.hex_entropy, "hex-entropy", settings.HEX_ENTROPY_MAX]),
             (self.validate_entropy, [args.b64_entropy, "b64-entropy", settings.B64_ENTROPY_MAX]),
             (self.validate_min_length, [args.min_length]),
-            (self.validate_config_files, [args.config]),
+            (self.validate_workers, [args.workers]),
             (self.validate_min_confidence, [args.min_confidence]),
             (self.validate_output_file, [args.json_output, "json"]),
             (self.validate_output_file, [args.sarif_output, "sarif"])
@@ -178,6 +204,11 @@ def main():
 
     cli = CLI()
     args = cli.parse()
+
+    if args.command == 'showconfig':
+        runtime_cfg = load_runtime_config(args.config)
+        RuntimeConfigReporter.pretty_runtime_cfg(runtime_cfg, args.sections)
+        sys.exit(0)
 
     cli_args = CliArgs()
     cli_args.HEX_ENTROPY_THRESHOLD = args.hex_entropy

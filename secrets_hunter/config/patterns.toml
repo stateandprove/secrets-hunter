@@ -29,7 +29,9 @@ exclude_patterns = [
 
 exclude_keywords = [
     'hash',
-    'checksum'
+    'checksum',
+    'integrity',
+    'name'
 ]
 
 # Keywords that suggest secrets
@@ -78,6 +80,9 @@ assignment_patterns = [
 
     # $api_key = "abc123"; (PHP/Perl variables)
     '''\$([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*["']([^"']+)["']''',
+
+    # JSON key-value pairs
+    '''["']([a-zA-Z_][a-zA-Z0-9_]*)["']\s*:\s*["']([A-Za-z0-9+/=_\-]{20,})["']'''
 ]
 
 # Regex patterns for known secret formats

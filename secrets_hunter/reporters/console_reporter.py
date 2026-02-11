@@ -1,11 +1,10 @@
 from typing import List, Optional
 
+from secrets_hunter.reporters.console_base import BaseConsoleReporter
 from secrets_hunter.models import Finding
 
 
-class ConsoleReporter:
-    WIDTH = 88
-
+class ConsoleReporter(BaseConsoleReporter):
     @staticmethod
     def _truncate(s: Optional[str], max_len: int) -> str:
         if not s:

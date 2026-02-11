@@ -8,6 +8,12 @@ secrets-hunter [OPTIONS] [target]
 
 - **target**: file or directory to scan (default: current directory `.`)
 
+## Table of Contents
+- [Options](#options)
+- [Usage examples](#usage-examples)
+- [Exit codes](#exit-codes)
+- [Logging](#logging)
+
 ---
 
 ## Options
@@ -24,7 +30,7 @@ secrets-hunter [OPTIONS] [target]
 | `--min-length INT`     |     int |    `10` | Minimum candidate string length to consider.                        |
 | `--workers INT`        |     int |     `4` | Number of parallel workers when scanning directories.               |
 | `--log-level LEVEL`    |    enum |  `INFO` | Logging verbosity: `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`. |
-| `--min-confidence INT` |     int |    `75` | Only report findings with confidence **>=** this value (0–100).     |
+| `--min-confidence INT` |     int |     `0` | Only report findings with confidence **>=** this value (0–100).     |
 
 ---
 
@@ -40,9 +46,15 @@ Example output:
 
 ```bash
 ========================================================================================
-[1] Stripe API Key found at app.py:11
+[1] AWS Access Key found at app.py:6
     Severity:   CRITICAL (confidence: 100%, reasoning: Pattern Match)
-    Variable:   stripe_api_key
+    Variable:   aws_access_key
+    Match:      ***MASKED***
+    Context:    ***MASKED***
+----------------------------------------------------------------------------------------
+[2] High Entropy Base64 String found at app.py:7
+    Severity:   CRITICAL (confidence: 100%, reasoning: High Entropy in context of secret key/variable assignment - secret)
+    Variable:   aws_secret_access_key
     Match:      ***MASKED***
     Context:    ***MASKED***
 ----------------------------------------------------------------------------------------
@@ -55,6 +67,7 @@ secrets-hunter path/to/file.py
 ```
 
 ### Reveal findings (unmasked)
+Findings are masked by default. To show raw values, use the `--reveal-findings` flag:
 
 ```bash
 secrets-hunter . --reveal-findings
@@ -64,11 +77,17 @@ Example output:
 
 ```bash
 ========================================================================================
-[1] Stripe API Key found at app.py:11
+[1] AWS Access Key found at app.py:6
     Severity:   CRITICAL (confidence: 100%, reasoning: Pattern Match)
-    Variable:   stripe_api_key
-    Match:      sk_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-    Context:    STRIPE_API_KEY = "sk_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    Variable:   aws_access_key
+    Match:      AKIAxxxxxxxxxxxxxxxx
+    Context:    AWS_ACCESS_KEY = "AKIAxxxxxxxxxxxxxxxx"
+----------------------------------------------------------------------------------------
+[2] High Entropy Base64 String found at app.py:7
+    Severity:   CRITICAL (confidence: 100%, reasoning: High Entropy in context of secret key/variable assignment - secret)
+    Variable:   aws_secret_access_key
+    Match:      xxxxxxxxxxxxx/xxxxxxx/xxxxxxxxxxxxxxxxxx
+    Context:    AWS_SECRET_ACCESS_KEY = "xxxxxxxxxxxxx/xxxxxxx/xxxxxxxxxxxxxxxxxx"
 ----------------------------------------------------------------------------------------
 ```
 
@@ -84,15 +103,27 @@ Example output:
 [
     {
         "file": "app.py",
-        "line": 11,
-        "type": "Stripe API Key",
+        "line": 6,
+        "type": "AWS Access Key",
         "match": "***MASKED***",
         "context": "***MASKED***",
         "severity": "CRITICAL",
         "confidence_reasoning": "Pattern Match",
         "detection_method": "pattern",
         "confidence": 100,
-        "context_var": "stripe_api_key"
+        "context_var": "aws_access_key"
+    },
+    {
+        "file": "app.py",
+        "line": 7,
+        "type": "High Entropy Base64 String",
+        "match": "***MASKED***",
+        "context": "***MASKED***",
+        "severity": "CRITICAL",
+        "confidence_reasoning": "High Entropy in context of secret key/variable assignment - secret",
+        "detection_method": "entropy",
+        "confidence": 100,
+        "context_var": "aws_secret_access_key"
     }
 ]
 ```
@@ -106,7 +137,7 @@ secrets-hunter . --reveal-findings --json results.json
 ### Export as JSON, reveal findings and filter out low-confidence findings
 
 ```bash
-secrets-hunter . --reveal-findings --json results.json --min-confidence 90
+secrets-hunter . --reveal-findings --json results.json --min-confidence 75
 ```
 
 ### Export as SARIF
@@ -115,17 +146,21 @@ secrets-hunter . --reveal-findings --json results.json --min-confidence 90
 secrets-hunter . --sarif results.sarif
 ```
 
-### Use overlay config (team baseline)
+### Use overlay config
+Apply custom configuration using an overlay file:
 
 ```bash
 secrets-hunter . --config team.toml
 ```
 
 ### Stack multiple overlays
+Apply multiple configuration files in sequence:
 
 ```bash
 secrets-hunter . --config ci.toml --config local.toml
 ```
+
+Learn more about configuration in the [Configuration docs](config.md).
 
 ---
 

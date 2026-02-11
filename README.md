@@ -1,7 +1,7 @@
 # Secrets Hunter
 
-[![PyPI](.github/badges/pypi.svg)](https://pypi.org/project/secrets-hunter/)
-[![Python](.github/badges/python.svg)](https://python.org/)
+[![PyPI](badges/pypi.svg)](https://pypi.org/project/secrets-hunter/)
+[![Python](badges/python.svg)](https://python.org/)
 
 **Secrets Hunter** is a lightweight, fully autonomous, and dependency-free scanner that detects secrets and sensitive information in your codebase.
 
@@ -79,25 +79,26 @@ Export results to JSON:
 secrets-hunter . --json results.json
 ```
 
-See the [usage docs](docs/usage.md) for all flags and more examples.
+See the [Usage docs](docs/usage.md) for all flags and more examples.
 
 ## Configuration
 
-Secrets Hunter ships with built-in packaged defaults and supports **overlay configs**.
+Secrets Hunter ships with built-in packaged defaults. You can display them using CLI:
+```bash
+secrets-hunter showconfig
+```
 
-Example (team baseline overlay):
-
+Configuration can be customized using overlay config files. Example (team baseline overlay):
 ```bash
 secrets-hunter . --config team.toml
 ```
 
 Multiple overlays are applied **in the order provided**:
-
 ```bash
 secrets-hunter . --config ci.toml --config local.toml
 ```
 
-A full description and usage examples of the configuration are available in [Configuration docs](docs/config.md).
+A full description and usage examples are available in [Configuration docs](docs/config.md).
 
 ## License
 
