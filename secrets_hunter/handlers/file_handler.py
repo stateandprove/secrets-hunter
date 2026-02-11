@@ -10,7 +10,13 @@ logger = logging.getLogger(__name__)
 class FileHandler:
     """Handle file operations for scanning"""
     
-    def __init__(self, ignore_extensions: Set[str], ignore_dirs: Set[str]):
+    def __init__(
+        self,
+        ignore_files: Set[str],
+        ignore_extensions: Set[str],
+        ignore_dirs: Set[str]
+    ):
+        self.ignore_files = ignore_files
         self.ignore_extensions = {ext.lower() for ext in ignore_extensions}
         self.ignore_dirs = ignore_dirs
 
@@ -44,8 +50,14 @@ class FileHandler:
         if path.is_dir():
             return path.name in self.ignore_dirs
 
-        return (not self.is_text_file(path) or
-                path.suffix.lower() in self.ignore_extensions)
+        if path.name in self.ignore_files:
+            return True
+        if path.suffix.lower() in self.ignore_extensions:
+            return True
+        if not self.is_text_file(path):
+            return True
+
+        return False
 
     @staticmethod
     def read_file(filepath: Path) -> Iterator[str]:

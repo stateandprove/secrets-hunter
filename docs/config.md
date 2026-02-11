@@ -3,7 +3,7 @@
 Secrets Hunter loads two **packaged** config files:
 
 - `patterns.toml` (regex patterns, keywords, assignment patterns, excludes)
-- `ignore.toml` (ignored extensions and directories)
+- `ignore.toml` (ignored files, extensions and directories)
 
 You can then apply **one or more overlay TOML files** via CLI:
 
@@ -11,49 +11,50 @@ You can then apply **one or more overlay TOML files** via CLI:
 secrets-hunter . --config team-overrides.toml
 ```
 
-Overlays are applied **in the order provided**. Overlays don’t replace files; they layer on top.
+Overlays are applied **in the order provided**. Overlays don't replace the entire configuration, but merge on top of existing settings instead.
+
+## Table of Contents
+- [Viewing Current Configuration](#viewing-current-configuration)
+- [Full Schema](#full-schema)
+  - [Secret patterns](#secret-patterns)
+  - [Exclude patterns](#exclude-patterns)
+  - [Secret keywords](#secret-keywords)
+  - [Exclude keywords](#exclude-keywords)
+  - [Assignment patterns](#assignment-patterns)
+  - [Ignore rules](#ignore-rules)
+- [Overlays](#overlays)
+- [Removal keys](#removal-keys)
+- [Practical examples](#practical-examples)
+- [Keep things clean](#keep-things-clean)
 
 ---
 
-## How overlays work
+## Viewing Current Configuration
 
-### `secret_patterns` (by name)
-`[[secret_patterns]]` entries are merged **by `name`**:
+The `showconfig` command displays the scanner's active configuration. You can view the complete configuration or specific sections.
 
-- If an overlay defines a pattern with an existing `name`, it **replaces** the previous pattern (and flags).
-- If it uses a new `name`, it **adds** a new pattern.
-- You can remove existing patterns using `remove_secret_patterns`.
+View the entire configuration:
+```bash
+secrets-hunter showconfig
+```
 
-### Lists
-These keys are treated as lists and are:
+View specific configuration sections:
+```bash
+# Shows secret pattern definitions
+secrets-hunter showconfig secret_patterns
 
-1. **extended** (appended) from each file in load order
-2. **deduplicated** (first occurrence kept)
+# Shows ignored directories and files
+secrets-hunter showconfig ignore_files ignore_dirs
+```
 
-Applies to:
-- `exclude_patterns`
-- `secret_keywords`
-- `exclude_keywords`
-- `assignment_patterns`
-- `ignore.extensions`
-- `ignore.dirs`
+If an overlay file is provided, `showconfig` displays the merged result of the default configuration plus your overrides:
+```bash
+# Shows complete config with team overrides applied
+secrets-hunter showconfig --config team-overrides.toml
 
-Lists can’t be overridden — only appended and deduplicated (first occurrence wins). To undo something from an earlier file, use the matching `remove_*` key.
-
-### Removals
-If you need to remove a previously added item, use the corresponding `remove_*` key.
-
-Supported removal keys:
-
-- `remove_secret_patterns`
-- `remove_exclude_patterns`
-- `remove_secret_keywords`
-- `remove_exclude_keywords`
-- `remove_assignment_patterns`
-- `remove_ignore_extensions`
-- `remove_ignore_dirs`
-
----
+# Shows only secret patterns with overrides applied
+secrets-hunter showconfig secret_patterns --config team-overrides.toml
+```
 
 ## Full schema
 
@@ -73,13 +74,14 @@ Notes:
 - `flags` (if present) must be a **list of strings**, each one of:
   - `IGNORECASE`, `MULTILINE`, `DOTALL`, `VERBOSE`, `ASCII`
 
-### Exclude patterns (false positives)
+### Exclude patterns
+Findings matching these patterns will be rejected.
 
 ```toml
 exclude_patterns = [
   '''^[0-9a-f]{32}$''',  # MD5 hashes
   "example",
-  "dummy",
+  "dummy"
 ]
 ```
 
@@ -95,12 +97,12 @@ secret_keywords = [
   "secret",
   "token",
   "api_key",
-  "password",
+  "password"
 ]
 ```
 
 ### Exclude keywords
-Used to reject findings basing on keyword/variable name.
+Used to reject findings based on keyword/variable name.
 
 ```toml
 exclude_keywords = [
@@ -124,9 +126,52 @@ Ignore rules live under the `[ignore]` table:
 
 ```toml
 [ignore]
+files = ["package-lock.json"]
 extensions = [".pdf", ".png", ".zip"]
 dirs = ["node_modules", ".git", "dist", "build"]
 ```
+
+---
+
+## Overlays
+
+### `secret_patterns` (by name)
+`[[secret_patterns]]` entries are merged **by `name`**:
+
+- If an overlay defines a pattern with an existing `name`, it **replaces** the previous pattern (and flags).
+- If it uses a new `name`, it **adds** a new pattern.
+- You can remove existing patterns using `remove_secret_patterns`.
+
+### Lists
+These keys are treated as lists and are:
+
+1. **extended** (appended) from each file in load order
+2. **deduplicated** (first occurrence kept)
+
+Applies to:
+- `exclude_patterns`
+- `secret_keywords`
+- `exclude_keywords`
+- `assignment_patterns`
+- `ignore.files`
+- `ignore.extensions`
+- `ignore.dirs`
+
+Lists can’t be overridden — only appended and deduplicated (first occurrence wins). To undo something from an earlier file, use the matching `remove_*` key.
+
+### Removals
+If you need to remove a previously added item, use the corresponding `remove_*` key.
+
+Supported removal keys:
+
+- `remove_secret_patterns`
+- `remove_exclude_patterns`
+- `remove_secret_keywords`
+- `remove_exclude_keywords`
+- `remove_assignment_patterns`
+- `remove_ignore_files`
+- `remove_ignore_extensions`
+- `remove_ignore_dirs`
 
 ---
 
@@ -151,6 +196,7 @@ remove_assignment_patterns = [
 
 ### Remove ignore items
 ```toml
+remove_ignore_files = ["package-lock.json"]
 remove_ignore_extensions = [".pdf", ".svg"]
 remove_ignore_dirs = ["dist"]
 ```
@@ -246,7 +292,7 @@ secrets-hunter . --config team.toml
 ```toml
 exclude_patterns = [
   "example",
-  "test",
+  "test"
 ]
 ```
 
@@ -269,6 +315,6 @@ Configs are layered in the order given (ci first, then local)
 
 - Prefer **specific patterns** over broad ones (broad regex = noisy scans).
 - Keep `exclude_patterns` tight; avoid excluding generic words unless you really need it.
-- Name of your pattern will be shown in a report, so give it a clear `name`.
+- The name of your pattern will be shown in the report, so give it a clear `name`.
 
 ---
