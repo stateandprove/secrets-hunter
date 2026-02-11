@@ -1,6 +1,8 @@
 name: unit-tests
 
 on:
+  push:
+    tags: ["v*"]
   workflow_dispatch:
     inputs:
       ref:
