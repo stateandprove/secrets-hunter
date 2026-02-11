@@ -24,9 +24,9 @@ class RuntimeConfig:
     exclude_keywords: list[str]
     secret_keywords: list[str]
     assignment_patterns: list[re.Pattern]
-    ignore_files: set[str]
-    ignore_extensions: set[str]
-    ignore_dirs: set[str]
+    ignore_files: tuple[str, ...]
+    ignore_extensions: tuple[str, ...]
+    ignore_dirs: tuple[str, ...]
 
 
 def require_table(value: Any, key: str, file: Path) -> dict[str, Any]:
@@ -137,7 +137,7 @@ def load_runtime_config(user_configs: list[str | Path] | None = None) -> Runtime
         rm_dirs = set(require_string_list(data, "remove_ignore_dirs", f))
 
         if rm_files:
-            ignore_files = [x for x in ignore_dirs if x not in rm_files]
+            ignore_files = [x for x in ignore_files if x not in rm_files]
         if rm_ext:
             ignore_ext = [x for x in ignore_ext if x not in rm_ext]
         if rm_dirs:
@@ -223,9 +223,9 @@ def load_runtime_config(user_configs: list[str | Path] | None = None) -> Runtime
         exclude_keywords=exclude_keywords,
         secret_keywords=secret_keywords,
         assignment_patterns=compiled_assignment,
-        ignore_files=set(ignore_files),
-        ignore_extensions=set(ignore_ext),
-        ignore_dirs=set(ignore_dirs),
+        ignore_files=tuple(ignore_files),
+        ignore_extensions=tuple(ignore_ext),
+        ignore_dirs=tuple(ignore_dirs),
     )
 
 
