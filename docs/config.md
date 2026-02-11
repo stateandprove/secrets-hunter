@@ -292,7 +292,7 @@ secrets-hunter . --config team.toml
 ```toml
 exclude_patterns = [
   "example",
-  "test",
+  "test"
 ]
 ```
 
