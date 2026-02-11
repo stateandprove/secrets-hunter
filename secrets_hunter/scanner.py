@@ -121,10 +121,10 @@ class SecretsHunter:
                 finding.reject(rejected_by + " in value")
                 continue
 
-            kw_rejected, kw_excluded_by = self.false_positive_validator.check_rejection_for_keywords(vars_ordered)
+            kw_rejected, kw_rejected_by = self.false_positive_validator.check_rejection_for_keywords(vars_ordered)
 
             if kw_rejected:
-                finding.reject(kw_excluded_by + " in keyword/variable")
+                finding.reject(kw_rejected_by + " in keyword/variable")
 
         return all_line_findings
 
