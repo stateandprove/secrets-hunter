@@ -79,7 +79,7 @@ Export results to JSON:
 secrets-hunter . --json results.json
 ```
 
-See the [usage docs](docs/usage.md) for all flags and more examples.
+See the [Usage docs](docs/usage.md) for all flags and more examples.
 
 ## Configuration
 
