@@ -3,10 +3,15 @@ from dataclasses import dataclass
 
 HEX_ENTROPY_MAX = 4.5
 B64_ENTROPY_MAX = 6.0
-MAX_LINE_LENGTH = 50000
-MAX_REPEAT_RUN = 1000
 MAX_WORKERS_MULTIPLIER = 2
 STRIP = '.,;:()[]{}<>"\'`'
+
+
+class FileSettings:
+    MAX_LINE_LENGTH = 50000
+    MAX_REPEAT_RUN = 1000
+    BINARY_DETECTION_CHUNK_SIZE = 2048
+    CONTROL_CHARS_RATIO_THRESHOLD = 0.05
 
 
 class CLIDefaults:
