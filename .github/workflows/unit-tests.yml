@@ -66,4 +66,4 @@ jobs:
 
       - name: Run functional tests
         run: |
-          python -m unittest discover -s tests/func -p "test_*.py" -v
+          python -m unittest discover -s tests/func -p "tests_*.py" -v
