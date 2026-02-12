@@ -6,10 +6,9 @@ from pathlib import Path
 from secrets_hunter.config import CLIArgs, RuntimeConfig, STRIP
 from secrets_hunter.detectors.entropy_detector import EntropyDetector
 from secrets_hunter.detectors.pattern_detector import PatternDetector
-from secrets_hunter.utils import StringsExtractor, validators
-from secrets_hunter.handlers.file_handler import FileHandler
-from secrets_hunter.handlers.progress import FileProgressBar, FolderProgressBar
-from secrets_hunter.handlers.findings_processor import FindingsProcessor
+from secrets_hunter.validators import FalsePositiveFindingsValidator
+from secrets_hunter.handlers import FileHandler, StringsExtractor, FindingsProcessor
+from secrets_hunter.handlers.progress_bar import FileProgressBar, FolderProgressBar
 from secrets_hunter.models import Finding, Severity, DetectionMethod, Confidence
 
 logger = logging.getLogger(__name__)
@@ -26,7 +25,7 @@ class SecretsHunter:
             set(self.runtime_cfg.ignore_extensions),
             set(self.runtime_cfg.ignore_dirs)
         )
-        self.false_positive_validator = validators.FalsePositiveValidator(
+        self.false_positive_validator = FalsePositiveFindingsValidator(
             exclude_patterns=self.runtime_cfg.exclude_patterns,
             exclude_keywords=self.runtime_cfg.exclude_keywords
         )

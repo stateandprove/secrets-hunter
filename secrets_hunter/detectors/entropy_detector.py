@@ -1,7 +1,8 @@
 from secrets_hunter.detectors.base import BaseDetector
 from secrets_hunter.models import Finding, DetectionMethod, Severity, Confidence
 from secrets_hunter.config import CLIArgs
-from secrets_hunter.utils import entropy as entropy_utils
+
+from .utils import entropy as entropy_utils
 
 
 class EntropyDetector(BaseDetector):
