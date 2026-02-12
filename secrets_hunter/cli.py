@@ -7,14 +7,14 @@ from pathlib import Path
 
 from secrets_hunter import __version__
 from secrets_hunter.scanner import SecretsHunter
-from secrets_hunter.config import settings, CliArgs, load_runtime_config
+from secrets_hunter.config import settings, CLIArgs, CLIDefaults, load_runtime_config
 from secrets_hunter.reporters.console_reporter import ConsoleReporter
 from secrets_hunter.reporters.json_reporter import JSONReporter
 from secrets_hunter.reporters.sarif_reporter import SARIFReporter
 from secrets_hunter.reporters.runtime_cfg_reporter import RuntimeConfigReporter
 
 
-logo_ascii = rf"""
+logo_ascii = r"""
 
     ███████╗██╗   ██╗██╗      ██████╗███╗   ██╗
     ██╔════╝██║   ██║██║     ██╔════╝████╗  ██║
@@ -22,6 +22,8 @@ logo_ascii = rf"""
     ██╔══╝  ╚██╗ ██╔╝██║     ██║     ██║╚██╗██║
     ██║      ╚████╔╝ ███████╗╚██████╗██║ ╚████║
     ╚═╝       ╚═══╝  ╚══════╝ ╚═════╝╚═╝  ╚═══╝
+"""
+version_ascii = rf"""
               ───────────────────────
                Secrets Hunter v{__version__}
               ───────────────────────
@@ -35,8 +37,8 @@ scan_args = {
     },
     "--reveal-findings": {
         "action": "store_true",
-        "default": CliArgs.REVEAL_FINDINGS,
-        "help": f"Reveal findings in output (default: {CliArgs.REVEAL_FINDINGS})"
+        "default": CLIDefaults.REVEAL_FINDINGS,
+        "help": f"Reveal findings in output (default: {CLIDefaults.REVEAL_FINDINGS})"
     },
     "--config": {
         "action": "append",
@@ -56,34 +58,34 @@ scan_args = {
     },
     "--hex-entropy": {
         "type": float,
-        "default": CliArgs.HEX_ENTROPY_THRESHOLD,
-        "help": f"Hex entropy threshold (default: {CliArgs.HEX_ENTROPY_THRESHOLD})"
+        "default": CLIDefaults.HEX_ENTROPY_THRESHOLD,
+        "help": f"Hex entropy threshold (default: {CLIDefaults.HEX_ENTROPY_THRESHOLD})"
     },
     "--b64-entropy": {
         "type": float,
-        "default": CliArgs.B64_ENTROPY_THRESHOLD,
-        "help": f"Base64 entropy threshold (default: {CliArgs.B64_ENTROPY_THRESHOLD})"
+        "default": CLIDefaults.B64_ENTROPY_THRESHOLD,
+        "help": f"Base64 entropy threshold (default: {CLIDefaults.B64_ENTROPY_THRESHOLD})"
     },
     "--min-length": {
         "type": int,
-        "default": CliArgs.MIN_STRING_LENGTH,
-        "help": f"Minimum string length (default: {CliArgs.MIN_STRING_LENGTH})"
+        "default": CLIDefaults.MIN_STRING_LENGTH,
+        "help": f"Minimum string length (default: {CLIDefaults.MIN_STRING_LENGTH})"
     },
     "--workers": {
         "type": int,
-        "default": CliArgs.MAX_WORKERS,
-        "help": f"Number of parallel workers (default: {CliArgs.MAX_WORKERS})"
+        "default": CLIDefaults.MAX_WORKERS,
+        "help": f"Number of parallel workers (default: {CLIDefaults.MAX_WORKERS})"
     },
     "--log-level": {
         "type": str,
         "choices": ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-        "default": CliArgs.LOG_LEVEL,
-        "help": f"Log level (default: {CliArgs.LOG_LEVEL})"
+        "default": CLIDefaults.LOG_LEVEL,
+        "help": f"Log level (default: {CLIDefaults.LOG_LEVEL})"
     },
     "--min-confidence": {
         "type": int,
-        "default": CliArgs.MIN_CONFIDENCE,
-        "help": f"Minimum confidence of findings to display (default: {CliArgs.MIN_CONFIDENCE})"
+        "default": CLIDefaults.MIN_CONFIDENCE,
+        "help": f"Minimum confidence of findings to display (default: {CLIDefaults.MIN_CONFIDENCE})"
     }
 }
 
@@ -200,7 +202,7 @@ class CLI:
 
 
 def main():
-    print(logo_ascii)
+    print(logo_ascii, version_ascii)
 
     cli = CLI()
     args = cli.parse()
@@ -210,14 +212,7 @@ def main():
         RuntimeConfigReporter.pretty_runtime_cfg(runtime_cfg, args.sections)
         sys.exit(0)
 
-    cli_args = CliArgs()
-    cli_args.HEX_ENTROPY_THRESHOLD = args.hex_entropy
-    cli_args.B64_ENTROPY_THRESHOLD = args.b64_entropy
-    cli_args.MIN_STRING_LENGTH = args.min_length
-    cli_args.MAX_WORKERS = args.workers
-    cli_args.MIN_CONFIDENCE = args.min_confidence
-    cli_args.REVEAL_FINDINGS = args.reveal_findings
-
+    cli_args = CLIArgs.from_argparse(args)
     runtime_cfg = load_runtime_config(args.config)
 
     logging.basicConfig(

@@ -18,6 +18,8 @@ class FolderProgressBar:
 
 
 class FileProgressBar:
+    STEP = 100
+
     @staticmethod
     def render(current_line: int):
         sys.stdout.write(

@@ -1,15 +1,13 @@
-from typing import List
-
 from secrets_hunter.detectors.base import BaseDetector
-from secrets_hunter.models import Finding, DetectionMethod, Severity
-from secrets_hunter.config import CliArgs
+from secrets_hunter.models import Finding, DetectionMethod, Severity, Confidence
+from secrets_hunter.config import CLIArgs
 from secrets_hunter.utils import entropy as entropy_utils
 
 
 class EntropyDetector(BaseDetector):
     """Detect secrets using entropy analysis"""
 
-    def __init__(self, cli_args: CliArgs):
+    def __init__(self, cli_args: CLIArgs):
         super().__init__()
         self.cli_args = cli_args
 
@@ -18,8 +16,8 @@ class EntropyDetector(BaseDetector):
         line: str,
         line_num: int,
         filepath: str,
-        strings: List[str]
-    ) -> List[Finding]:
+        strings: list[str]
+    ) -> list[Finding]:
         findings = []
 
         for string in strings:
@@ -31,10 +29,10 @@ class EntropyDetector(BaseDetector):
             is_high_entropy = False
             string_type = None
 
-            if is_hex and entropy >= self.cli_args.HEX_ENTROPY_THRESHOLD:
+            if is_hex and entropy >= self.cli_args.hex_entropy_threshold:
                 is_high_entropy = True
                 string_type = "High Entropy Hex String"
-            elif (is_base64 or is_base64url) and entropy >= self.cli_args.B64_ENTROPY_THRESHOLD:
+            elif (is_base64 or is_base64url) and entropy >= self.cli_args.b64_entropy_threshold:
                 is_high_entropy = True
                 string_type = "High Entropy Base64 String"
 
@@ -44,12 +42,12 @@ class EntropyDetector(BaseDetector):
             findings.append(Finding(
                 file=self.format_filepath(filepath),
                 line=line_num,
-                severity=str(Severity.LOW.value),
+                severity=Severity.LOW,
                 type=string_type,
                 match=string,
                 context=line.strip()[:100],
                 detection_method=DetectionMethod.ENTROPY,
-                confidence=20,
+                confidence=Confidence.HIGH_ENTROPY_NO_CONTEXT,
                 confidence_reasoning="High Entropy without context"
             ))
 

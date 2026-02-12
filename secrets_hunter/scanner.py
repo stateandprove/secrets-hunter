@@ -2,23 +2,22 @@ import logging
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import List, Tuple
 
-from secrets_hunter.config import CliArgs, RuntimeConfig, STRIP
+from secrets_hunter.config import CLIArgs, RuntimeConfig, STRIP
 from secrets_hunter.detectors.entropy_detector import EntropyDetector
 from secrets_hunter.detectors.pattern_detector import PatternDetector
 from secrets_hunter.utils import StringsExtractor, validators
 from secrets_hunter.handlers.file_handler import FileHandler
 from secrets_hunter.handlers.progress import FileProgressBar, FolderProgressBar
-from secrets_hunter.handlers.output_formater import OutputFormatter
-from secrets_hunter.models import Finding, Severity, DetectionMethod
+from secrets_hunter.handlers.findings_processor import FindingsProcessor
+from secrets_hunter.models import Finding, Severity, DetectionMethod, Confidence
 
 logger = logging.getLogger(__name__)
 
 
 class SecretsHunter:
-    def __init__(self,  runtime_cfg: RuntimeConfig, cli_args: CliArgs = None):
-        self.cli_args = cli_args or CliArgs()
+    def __init__(self,  runtime_cfg: RuntimeConfig, cli_args: CLIArgs = None):
+        self.cli_args = cli_args or CLIArgs()
         self.runtime_cfg = runtime_cfg
         self.pattern_detector = PatternDetector(self.runtime_cfg.secret_patterns)
         self.entropy_detector = EntropyDetector(self.cli_args)
@@ -33,10 +32,10 @@ class SecretsHunter:
         )
         self.strings_extractor = StringsExtractor(
             assignment_patterns=self.runtime_cfg.assignment_patterns,
-            min_token_length=self.cli_args.MIN_STRING_LENGTH
+            min_token_length=self.cli_args.min_string_length
         )
 
-    def is_secret_var(self, v: str) -> Tuple[bool, str]:
+    def is_secret_var(self, v: str) -> tuple[bool, str]:
         v = v.lower()
 
         for k in self.runtime_cfg.secret_keywords:
@@ -45,7 +44,7 @@ class SecretsHunter:
 
         return False, ""
 
-    def extract_findings_from_line(self, line_num: int, line: str, filepath: Path) -> List[Finding]:
+    def extract_findings_from_line(self, line_num: int, line: str, filepath: Path) -> list[Finding]:
         # Step 1: Extract all strings from a line
         all_strings = self.strings_extractor.extract(line)
 
@@ -74,10 +73,16 @@ class SecretsHunter:
         if not all_line_findings:
             return []
 
-        # Step 4: Check the assignment context
-        ctx = self.strings_extractor.assignment_map(line)
+        # Step 4: Check and process the assignment context
+        assignment_context = self.strings_extractor.assignment_map(line)
+        transformed_findings = self._process_assignment_context(all_line_findings, assignment_context)
 
-        for finding in all_line_findings:
+        return transformed_findings
+
+    def _process_assignment_context(self, findings: list[Finding], ctx: dict) -> list[Finding]:
+        transformed_findings: list[Finding] = []
+
+        for finding in findings:
             match = finding.match
 
             if not match:
@@ -89,7 +94,8 @@ class SecretsHunter:
 
             if not vars_:
                 if match_rejected:
-                    finding.reject(rejected_by + " in value")
+                    finding = finding.reject(rejected_by + " in value")
+                transformed_findings.append(finding)
                 continue
 
             # can be multiple keys for a single secret,
@@ -97,38 +103,53 @@ class SecretsHunter:
             vars_ordered = sorted(vars_)
             best = next((v for v in vars_ordered if self.is_secret_var(v)[0]), vars_ordered[0])
 
-            finding.context_var = best
-            finding.severity = str(Severity.MEDIUM.value)
-            finding.confidence = 75
+            reasoning = (
+                "High Entropy with assignment context"
+                if finding.detection_method == DetectionMethod.ENTROPY
+                else finding.confidence_reasoning
+            )
 
-            if finding.detection_method == DetectionMethod.ENTROPY:
-                finding.confidence_reasoning = "High Entropy with assignment context"
+            finding = finding.with_context(
+                var=best,
+                severity=Severity.MEDIUM,
+                confidence=Confidence.HIGH_ENTROPY_WITH_ASSIGNMENT,
+                reasoning=reasoning
+            )
 
             is_secret, kw = self.is_secret_var(best)
 
             if is_secret:
-                finding.confidence = 100
-                finding.severity = str(Severity.CRITICAL.value)
+                reasoning = (
+                    f"High Entropy in context of secret key/variable assignment - {kw}"
+                    if finding.detection_method == DetectionMethod.ENTROPY
+                    else finding.confidence_reasoning
+                )
 
-                if finding.detection_method == DetectionMethod.ENTROPY:
-                    finding.confidence_reasoning = (
-                        f"High Entropy in context of secret key/variable assignment - {kw}"
-                    )
+                finding = finding.with_context(
+                    var=best,
+                    severity=Severity.CRITICAL,
+                    confidence=Confidence.VERIFIED,
+                    reasoning=reasoning
+                )
 
+                transformed_findings.append(finding)
                 continue
 
             if match_rejected:
-                finding.reject(rejected_by + " in value")
+                finding = finding.reject(rejected_by + " in value")
+                transformed_findings.append(finding)
                 continue
 
             kw_rejected, kw_rejected_by = self.false_positive_validator.check_rejection_for_keywords(vars_ordered)
 
             if kw_rejected:
-                finding.reject(kw_rejected_by + " in keyword/variable")
+                finding = finding.reject(kw_rejected_by + " in keyword/variable")
 
-        return all_line_findings
+            transformed_findings.append(finding)
 
-    def scan_file(self, filepath: Path, show_progress: bool = False) -> Tuple[List[Finding], bool]:
+        return transformed_findings
+
+    def scan_file(self, filepath: Path, show_progress: bool = False) -> tuple[list[Finding], bool]:
         findings, success = [], False
         progress_bar = None
         last_line_number = 0
@@ -148,10 +169,10 @@ class SecretsHunter:
                     findings.extend(line_findings)
                     last_line_number = line_num
 
-                    if show_progress and progress_bar and (line_num % 100 == 0 or line_num == 1):
+                    if progress_bar and (line_num % progress_bar.STEP == 0 or line_num == 1):
                         progress_bar.render(line_num)
 
-                if show_progress and progress_bar and last_line_number:
+                if progress_bar and last_line_number:
                     progress_bar.render(last_line_number)
 
                 success = True
@@ -166,8 +187,9 @@ class SecretsHunter:
 
         return findings, success
 
-    def scan_directory(self, directory: str) -> Tuple[List[Finding], bool]:
-        all_findings, success = [], False
+    def scan_directory(self, directory: str) -> tuple[list[Finding], bool]:
+        all_findings: list[Finding] = []
+        success: bool = False
         target_path = Path(directory)
 
         if not target_path.exists():
@@ -184,14 +206,14 @@ class SecretsHunter:
             return all_findings, True
 
         logger.info(f"Found {total_files} files to scan")
-        logger.info(f"Scanning with {self.cli_args.MAX_WORKERS} workers...\n")
+        logger.info(f"Scanning with {self.cli_args.max_workers} workers...\n")
 
         processed_count = 0
         failed_count = 0
         progress_bar = FolderProgressBar()
 
         try:
-            with ThreadPoolExecutor(max_workers=self.cli_args.MAX_WORKERS) as executor:
+            with ThreadPoolExecutor(max_workers=self.cli_args.max_workers) as executor:
                 futures = {executor.submit(self.scan_file, f, show_progress=False): f for f in files}
 
                 for future in as_completed(futures):
@@ -231,9 +253,10 @@ class SecretsHunter:
 
         return all_findings, success
 
-    def scan(self, target: str) -> Tuple[List[Finding], bool]:
+    def scan(self, target: str) -> tuple[list[Finding], bool]:
         """Scan target (file or directory)"""
-        findings, success = [], False
+        findings: list[Finding] = []
+        success: bool = False
         target_path = Path(target)
 
         if target_path.is_file() or target_path.is_dir():
@@ -248,6 +271,6 @@ class SecretsHunter:
             logger.error(f"'{target}' is not a valid file or directory")
 
         if success:
-            findings = OutputFormatter.format(findings, self.cli_args)
+            findings = FindingsProcessor.process(findings, self.cli_args)
 
         return findings, success
