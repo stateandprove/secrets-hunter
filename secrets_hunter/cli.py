@@ -11,8 +11,7 @@ from secrets_hunter.reporters.json_reporter import JSONReporter
 from secrets_hunter.reporters.sarif_reporter import SARIFReporter
 from secrets_hunter.reporters.runtime_cfg_reporter import RuntimeConfigReporter
 
-
-logo_ascii = r"""
+logo_ascii_filled = r"""
 
     ███████╗██╗   ██╗██╗      ██████╗███╗   ██╗
     ██╔════╝██║   ██║██║     ██╔════╝████╗  ██║
@@ -21,10 +20,15 @@ logo_ascii = r"""
     ██║      ╚████╔╝ ███████╗╚██████╗██║ ╚████║
     ╚═╝       ╚═══╝  ╚══════╝ ╚═════╝╚═╝  ╚═══╝
 """
-version_ascii = rf"""
-              ───────────────────────
-               Secrets Hunter v{__version__}
-              ───────────────────────
+
+logo_ascii_hollow = r"""
+   ________ ___      ___ ___       ________  ________      
+  |\  _____\\  \    /  /|\  \     |\   ____\|\   ___  \    
+  \ \  \__/\ \  \  /  / | \  \    \ \  \___|\ \  \\ \  \   
+   \ \   __\\ \  \/  / / \ \  \    \ \  \    \ \  \\ \  \  
+    \ \  \_| \ \    / /   \ \  \____\ \  \____\ \  \\ \  \ 
+     \ \__\   \ \__/ /     \ \_______\ \_______\ \__\\ \__\
+      \|__|    \|__|/       \|_______|\|_______|\|__| \|__|
 """
 
 scan_args = {
@@ -106,6 +110,23 @@ showconfig_args = {
 }
 
 
+def display_logo_with_version(logo, version):
+    version_text = f"Secrets Hunter v{version}"
+    version_length = len(version_text)
+
+    logo_lines = logo.strip('\n').split('\n')
+    logo_width = max(len(line) for line in logo_lines)
+
+    dash_line = "─" * version_length
+    padding = (logo_width - version_length) // 2 - 3
+    version_ascii = f"""
+    {' ' * padding}{dash_line}
+    {' ' * padding}{version_text}
+    {' ' * padding}{dash_line}\n"""
+
+    print(logo + version_ascii)
+
+
 class CLI:
     def __init__(self):
         self.parser = argparse.ArgumentParser(
@@ -152,7 +173,10 @@ class CLI:
 
 
 def main():
-    print(logo_ascii, version_ascii)
+    import random
+
+    logo = logo_ascii_filled if random.random() < 0.05 else logo_ascii_hollow
+    display_logo_with_version(logo, __version__)
 
     cli = CLI()
     args = cli.parse()
