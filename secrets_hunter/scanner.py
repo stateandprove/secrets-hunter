@@ -269,6 +269,10 @@ class SecretsHunter:
         else:
             logger.error(f"'{target}' is not a valid file or directory")
 
+        if not self.cli_args.min_confidence:
+            logger.info("Showing all findings, including false positive ones. "
+                        "To exclude them from the report, use --min-confidence argument ")
+
         if success:
             findings = FindingsProcessor.process(findings, self.cli_args)
 

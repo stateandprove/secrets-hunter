@@ -20,7 +20,7 @@ class DetectionMethod(str, Enum):
 
 class Confidence(IntEnum):
     REJECTED = 0
-    HIGH_ENTROPY_NO_CONTEXT = 5
+    HIGH_ENTROPY_NO_ASSIGNMENT_CONTEXT = 5
     HIGH_ENTROPY_WITH_ASSIGNMENT = 75
     VERIFIED = 100
 

@@ -48,8 +48,8 @@ class EntropyDetector(BaseDetector):
                 match=string,
                 context=line.strip()[:100],
                 detection_method=DetectionMethod.ENTROPY,
-                confidence=Confidence.HIGH_ENTROPY_NO_CONTEXT,
-                confidence_reasoning="High Entropy without context"
+                confidence=Confidence.HIGH_ENTROPY_NO_ASSIGNMENT_CONTEXT,
+                confidence_reasoning="High Entropy without assignment context"
             ))
 
         return findings
