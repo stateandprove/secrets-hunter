@@ -24,76 +24,93 @@ exclude_patterns = [
     'fake',
     'mock',
     'testpass',
-    'blob'
+    'blob',
+    'uat',
+    'dev'
 ]
 
 exclude_keywords = [
+    'md2',
+    'md4',
+    'md5',
+    'sha',
     'hash',
-    'checksum',
     'integrity',
-    'name'
+    'sum',
+    'name',
+    'version',
+    'public',
+    'example',
+    'sample',
+    'test',
+    'dummy',
+    'fake',
+    'placeholder',
+    'template'
 ]
 
 # Keywords that suggest secrets
 secret_keywords = [
     'secret',
     'token',
-    'api_key',
-    'apikey',
+    'pat',
     'credential',
     'auth',
-    'password',
-    'passwd',
+    'pass',
     'pwd',
     'private',
-    'key'
+    'key',
+    'session',
+    'jwt',
+    'bearer',
+    'oauth',
+    'client',
+    'consumer',
+    'master',
+    'encryption',
+    'decrypt',
+    'salt',
+    'certificate',
+    'cert',
+    'pem',
+    'p12',
+    'pfx',
+    'passphrase',
+    'security',
+    'connection',
+    'database',
+    'db',
+    'admin',
+    'root',
+    'service',
+    'account'
 ]
 
 # Patterns to detect variable assignments that might contain secrets
 assignment_patterns = [
-    # API_KEY = "abc123def456" or password: "secret123"
-    '''([a-zA-Z_][a-zA-Z0-9_]*)\s*[:=]\s*["']([^"']+)["']''',
+    # Assignment operators: a = "secret" or "a" = "secret" or key => "value" or key =: "value" etc.
+    '''["']?([a-zA-Z_][a-zA-Z0-9_]*)["']?\s*(?:=|:=|=>|=:)\s*["'`]([^"'`]+)["'`]''',
+
+    # Colon key-value pairs: a: "secret" or "a": "secret" (JSON, YAML)
+    '''["']?([a-zA-Z_][a-zA-Z0-9_]*)["']?\s*:\s*["']([^"']+)["']''',
 
     # token = abc123def456xyz789 (unquoted)
     '''([a-zA-Z_][a-zA-Z0-9_]*)\s*[:=]\s*([a-zA-Z0-9+/=_\-]+)''',
 
-    # const apiKey = `sk_test_abc123` (JavaScript template literals)
-    '''([a-zA-Z_][a-zA-Z0-9_]*)\s*[:=]\s*`([^`]+)`''',
+    # Tuple/function assignments: (password, "secret") or ("user", 'pass') or ('key', "value")
+    '''\(\s*["']?([^"',\s()]+)["']?\s*,\s*["']([^"']+)["']\s*\)?''',
 
-    # export API_KEY="abc123" (shell scripts)
-    '''export\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*[:=]\s*["']([^"']+)["']''',
+    # Docker ENV statements: ENV API_KEY "secret123" or ENV PASSWORD secret
+    '''ENV\s+([A-Z_][A-Z0-9_]*)\s+["']?([^"'\n]+)["']?''',
 
-    # set PASSWORD="secret123" (Windows batch/PowerShell)
-    '''set\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*[:=]\s*["']([^"']+)["']''',
+    # C/C++ preprocessor defines: #define API_KEY "secret123"
+    '''#define\s+([A-Z_][A-Z0-9_]*)\s+["']([^"']+)["']''',
 
-    # const SECRET_KEY = "abc123" (JavaScript/TypeScript)
-    '''const\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*[:=]\s*["']([^"']+)["']''',
-
-    # let authToken = "bearer_xyz" (JavaScript/TypeScript)
-    '''let\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*[:=]\s*["']([^"']+)["']''',
-
-    # var password = "secret" (JavaScript)
-    '''var\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*[:=]\s*["']([^"']+)["']''',
-
-    # define('DB_PASSWORD', 'secret123'); (PHP constants)
-    '''define\s*\(\s*["']([^"']+)["']\s*,\s*["']([^"']+)["']''',
-
-    # $api_key = "abc123"; (PHP/Perl variables)
-    '''\$([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*["']([^"']+)["']''',
-
-    # JSON key-value pairs
-    '''["']([a-zA-Z_][a-zA-Z0-9_]*)["']\s*:\s*["']([A-Za-z0-9+/=_\-]+)["']'''
+    # Python with type hints: api_key: str = "secret123"
+    '''([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*\w+\s*=\s*["']([^"']+)["']''',
 ]
 
 # Regex patterns for known secret formats
-[[secret_patterns]]
-name = "AWS Access Key"
-pattern = '''\bAKIA[0-9A-Z]{16}\b'''
-
-[[secret_patterns]]
-name = "GitHub Token"
-pattern = '''\bgh[pousr]_[A-Za-z0-9]{36,}\b'''
-
 [[secret_patterns]]
 name = "Private Key"
 pattern = '''-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----'''
@@ -103,41 +120,9 @@ name = "JWT Token"
 pattern = '''\beyJ[A-Za-z0-9_-]*\.eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*\b'''
 
 [[secret_patterns]]
-name = "Slack Token"
-pattern = '''\bxox[baprs]-[0-9A-Za-z-]{10,}\b'''
-
-[[secret_patterns]]
-name = "Google API Key"
-pattern = '''\bAIza[0-9A-Za-z_-]{35}\b'''
-
-[[secret_patterns]]
-name = "Stripe API Key"
-pattern = '''\bsk_live_[0-9a-zA-Z]{24,}\b'''
-
-[[secret_patterns]]
-name = "Twilio API Key"
-pattern = '''\bSK[0-9a-fA-F]{32}\b'''
-
-[[secret_patterns]]
-name = "SendGrid API Key"
-pattern = '''\bSG\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}\b'''
-
-[[secret_patterns]]
-name = "Mailchimp API Key"
-pattern = '''\b[0-9a-f]{32}-us[0-9]{1,2}\b'''
-
-[[secret_patterns]]
-name = "NPM Token"
-pattern = '''\bnpm_[A-Za-z0-9]{36}\b'''
-
-[[secret_patterns]]
-name = "PyPI Token"
-pattern = '''\bpypi-AgEIcHlwaS5vcmc[A-Za-z0-9_-]{50,}\b'''
-
-[[secret_patterns]]
-name = "Docker Hub Token"
-pattern = '''\bdckr_pat_[A-Za-z0-9_-]{40}\b'''
-
-[[secret_patterns]]
 name = "Database URL"
 pattern = '''(?i)(?:postgresql|mysql|mongodb|redis)://[^\s]+:[^\s]+@[^\s]+'''
+
+[[secret_patterns]]
+name = "AWS Access Key"
+pattern = '''\bAKIA[0-9A-Z]{16}\b'''
