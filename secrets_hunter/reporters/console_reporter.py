@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 from secrets_hunter.reporters.console_base import BaseConsoleReporter
 from secrets_hunter.models import Finding
@@ -13,7 +13,7 @@ class ConsoleReporter(BaseConsoleReporter):
         return s if len(s) <= max_len else s[: max_len - 3] + "..."
 
     @staticmethod
-    def format_report(findings: List[Finding]) -> None:
+    def format_report(findings: list[Finding]) -> None:
         if not findings:
             print("No secrets detected!")
             return
