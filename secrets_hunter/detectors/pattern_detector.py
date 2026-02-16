@@ -25,8 +25,11 @@ class PatternDetector(BaseDetector):
                 if not re.search(pattern, string):
                     continue
 
+                file = self.format_filepath(filepath)
+
                 findings.append(Finding(
-                    file=self.format_filepath(filepath),
+                    title=f"Hardcoded {secret_type} at {file}:{line_num}",
+                    file=file,
                     line=line_num,
                     severity=Severity.CRITICAL,
                     type=secret_type,

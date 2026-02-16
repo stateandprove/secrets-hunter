@@ -40,8 +40,11 @@ class EntropyDetector(BaseDetector):
             if not is_high_entropy:
                 continue
 
+            file = self.format_filepath(filepath)
+
             findings.append(Finding(
-                file=self.format_filepath(filepath),
+                title=f"Hardcoded {string_type} at {file}:{line_num}",
+                file=file,
                 line=line_num,
                 severity=Severity.LOW,
                 type=string_type,

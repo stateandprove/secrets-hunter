@@ -33,6 +33,7 @@ class SARIFReporter:
                     }
                 }],
                 "properties": {
+                    "title": finding.title,
                     "match": finding.match,
                     "detection_method": finding.detection_method,
                     "confidence": finding.confidence,

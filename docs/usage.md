@@ -45,16 +45,30 @@ secrets-hunter .
 Example output:
 
 ```bash
+Found 4 potential secrets:
+
 ========================================================================================
-[1] AWS Access Key found at app.py:6
+[1] Hardcoded jwt secret token at server.js:3
+    Severity:   CRITICAL (confidence: 100%, reasoning: Pattern Match)
+    Variable:   jwt_secret_token
+    Match:      ***MASKED***
+    Context:    ***MASKED***
+----------------------------------------------------------------------------------------
+[2] Hardcoded aws access key at app.py:6
     Severity:   CRITICAL (confidence: 100%, reasoning: Pattern Match)
     Variable:   aws_access_key
     Match:      ***MASKED***
     Context:    ***MASKED***
 ----------------------------------------------------------------------------------------
-[2] High Entropy Base64 String found at app.py:7
+[3] Hardcoded aws secret access key at app.py:7
     Severity:   CRITICAL (confidence: 100%, reasoning: High Entropy in context of secret key/variable assignment - secret)
     Variable:   aws_secret_access_key
+    Match:      ***MASKED***
+    Context:    ***MASKED***
+----------------------------------------------------------------------------------------
+[4] (REJECTED) Hardcoded file checksum at app.py:10
+    Severity:   LOW (confidence: 0%, reasoning: sum in keyword/variable)
+    Variable:   file_checksum
     Match:      ***MASKED***
     Context:    ***MASKED***
 ----------------------------------------------------------------------------------------
@@ -76,18 +90,32 @@ secrets-hunter . --reveal-findings
 Example output:
 
 ```bash
+Found 4 potential secrets:
+
 ========================================================================================
-[1] AWS Access Key found at app.py:6
+[1] Hardcoded jwt secret token at server.js:3
+    Severity:   CRITICAL (confidence: 100%, reasoning: Pattern Match)
+    Variable:   jwt_secret_token
+    Match:      eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.xxxxxxxxxx.xxxxxxx...
+    Context:    const JWT_SECRET_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.xxxxxx'
+----------------------------------------------------------------------------------------
+[2] Hardcoded aws access key at app.py:6
     Severity:   CRITICAL (confidence: 100%, reasoning: Pattern Match)
     Variable:   aws_access_key
     Match:      AKIAxxxxxxxxxxxxxxxx
     Context:    AWS_ACCESS_KEY = "AKIAxxxxxxxxxxxxxxxx"
 ----------------------------------------------------------------------------------------
-[2] High Entropy Base64 String found at app.py:7
+[3] Hardcoded aws secret access key at app.py:7
     Severity:   CRITICAL (confidence: 100%, reasoning: High Entropy in context of secret key/variable assignment - secret)
     Variable:   aws_secret_access_key
     Match:      xxxxxxxxxxxxx/xxxxxxx/xxxxxxxxxxxxxxxxxx
     Context:    AWS_SECRET_ACCESS_KEY = "xxxxxxxxxxxxx/xxxxxxx/xxxxxxxxxxxxxxxxxx"
+----------------------------------------------------------------------------------------
+[4] (REJECTED) Hardcoded file checksum at app.py:10
+    Severity:   LOW (confidence: 0%, reasoning: sum in keyword/variable)
+    Variable:   file_checksum
+    Match:      xxxxxxxx
+    Context:    FILE_CHECKSUM = "xxxxxxxx"
 ----------------------------------------------------------------------------------------
 ```
 
@@ -102,6 +130,20 @@ Example output:
 ```json
 [
     {
+        "title": "Hardcoded jwt secret token at server.js:3",
+        "file": "server.js",
+        "line": 3,
+        "type": "JWT Token",
+        "match": "***MASKED***",
+        "context": "***MASKED***",
+        "severity": "CRITICAL",
+        "confidence_reasoning": "Pattern Match",
+        "detection_method": "pattern",
+        "confidence": 100,
+        "context_var": "jwt_secret_token"
+    },
+    {
+        "title": "Hardcoded aws access key at app.py:6",
         "file": "app.py",
         "line": 6,
         "type": "AWS Access Key",
@@ -114,6 +156,7 @@ Example output:
         "context_var": "aws_access_key"
     },
     {
+        "title": "Hardcoded aws secret access key at app.py:7",
         "file": "app.py",
         "line": 7,
         "type": "High Entropy Base64 String",
@@ -124,6 +167,19 @@ Example output:
         "detection_method": "entropy",
         "confidence": 100,
         "context_var": "aws_secret_access_key"
+    },
+    {
+        "title": "(REJECTED) Hardcoded file checksum at app.py:10",
+        "file": "app.py",
+        "line": 10,
+        "type": "High Entropy Hex String",
+        "match": "***MASKED***",
+        "context": "***MASKED***",
+        "severity": "LOW",
+        "confidence_reasoning": "sum in keyword/variable",
+        "detection_method": "entropy",
+        "confidence": 0,
+        "context_var": "file_checksum"
     }
 ]
 ```
