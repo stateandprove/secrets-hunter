@@ -1,12 +1,20 @@
+from dataclasses import dataclass
+
+
 HEX_ENTROPY_MAX = 4.5
 B64_ENTROPY_MAX = 6.0
-MAX_LINE_LENGTH = 50000
-MAX_REPEAT_RUN = 1000
 MAX_WORKERS_MULTIPLIER = 2
 STRIP = '.,;:()[]{}<>"\'`'
 
 
-class CliArgs:
+class FileSettings:
+    MAX_LINE_LENGTH = 50000
+    MAX_REPEAT_RUN = 1000
+    BINARY_DETECTION_CHUNK_SIZE = 2048
+    CONTROL_CHARS_RATIO_THRESHOLD = 0.05
+
+
+class CLIDefaults:
     HEX_ENTROPY_THRESHOLD = 3.0
     B64_ENTROPY_THRESHOLD = 4.3
     MIN_STRING_LENGTH = 10
@@ -14,3 +22,26 @@ class CliArgs:
     MAX_WORKERS = 4
     REVEAL_FINDINGS = False
     LOG_LEVEL = "INFO"
+
+
+@dataclass
+class CLIArgs:
+    hex_entropy_threshold: float = CLIDefaults.HEX_ENTROPY_THRESHOLD
+    b64_entropy_threshold: float = CLIDefaults.B64_ENTROPY_THRESHOLD
+    min_string_length: int = CLIDefaults.MIN_STRING_LENGTH
+    min_confidence: int = CLIDefaults.MIN_CONFIDENCE
+    max_workers: int = CLIDefaults.MAX_WORKERS
+    reveal_findings: bool = CLIDefaults.REVEAL_FINDINGS
+    log_level: str = CLIDefaults.LOG_LEVEL
+
+    @classmethod
+    def from_argparse(cls, args):
+        return cls(
+            hex_entropy_threshold=args.hex_entropy,
+            b64_entropy_threshold=args.b64_entropy,
+            min_string_length=args.min_length,
+            min_confidence=args.min_confidence,
+            max_workers=args.workers,
+            reveal_findings=args.reveal_findings,
+            log_level=args.log_level
+        )
