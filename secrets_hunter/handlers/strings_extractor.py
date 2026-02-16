@@ -1,8 +1,7 @@
 import re
 
-from typing import List
-
 from secrets_hunter.config import STRIP
+
 
 class StringsExtractor:
     def __init__(self, assignment_patterns, min_token_length):
@@ -26,7 +25,7 @@ class StringsExtractor:
 
         return out
 
-    def extract(self, line: str) -> List[str]:
+    def extract(self, line: str) -> list[str]:
         """Extract all potential strings from a line"""
         strings = []
 

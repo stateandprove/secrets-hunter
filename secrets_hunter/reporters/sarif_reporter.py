@@ -1,8 +1,6 @@
 import json
 import logging
 
-from typing import List
-
 from secrets_hunter import __version__
 from secrets_hunter.models import Finding
 
@@ -11,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 class SARIFReporter:
     @staticmethod
-    def export(findings: List[Finding], output_file: str) -> None:
+    def export(findings: list[Finding], output_file: str) -> None:
         logger.info(f"Exporting results to {output_file}...")
 
         results = []
@@ -35,6 +33,7 @@ class SARIFReporter:
                     }
                 }],
                 "properties": {
+                    "title": finding.title,
                     "match": finding.match,
                     "detection_method": finding.detection_method,
                     "confidence": finding.confidence,

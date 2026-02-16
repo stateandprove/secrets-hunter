@@ -1,6 +1,13 @@
 [ignore]
 files = [
-    "package-lock.json"
+    "package-lock.json",
+    "pnpm-lock.yaml",
+    "go.sum",
+    "go.mod",
+    "shrinkwrap.yaml",
+    "checksums.txt",
+    "SHA256SUMS",
+    "MD5SUMS"
 ]
 
 extensions = [
@@ -37,7 +44,8 @@ extensions = [
     ".sqlite",
     ".bin",
     ".img",
-    ".iso"
+    ".iso",
+    ".lock"
 ]
 
 dirs = [
@@ -50,5 +58,8 @@ dirs = [
     '.venv',
     'env',
     '.tox',
-    '.idea'
+    '.idea',
+    '.cache',
+    '.pytest_cache',
+    '.mypy_cache',
 ]
