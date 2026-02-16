@@ -4,6 +4,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from secrets_hunter.models import Confidence
+
 # Directory containing the test script
 SCRIPT_DIR = Path(__file__).resolve().parent
 
@@ -11,7 +13,6 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 secrets = str(SCRIPT_DIR / "secrets")
 mid_secrets = str(SCRIPT_DIR / "secrets")
 zero_secrets = str(SCRIPT_DIR / "secrets")
-
 
 # Module and report paths
 MODULE = "secrets_hunter.cli"
@@ -79,7 +80,6 @@ class TestE2E(unittest.TestCase):
                 except Exception as e:
                     print(f"Warning: Could not delete {report_path}: {e}")
 
-
     def _validate_line_numbers(self, findings, line_extractor, line_count):
         """
         Helper method to validate that findings have correct line numbers.
@@ -124,11 +124,11 @@ class TestE2E(unittest.TestCase):
         return error_messages
 
     def _check_confidence(self,
-        findings,
-        confidence_extractor,
-        line_extractor,
-        awaited_confidence,
-    ):
+                          findings,
+                          confidence_extractor,
+                          line_extractor,
+                          awaited_confidence,
+                          ):
         error_messages = []
         for finding in findings:
             try:
@@ -137,7 +137,8 @@ class TestE2E(unittest.TestCase):
                     line_num = line_extractor(finding)
 
                     content = self._get_line_content(line_num)
-                    error_messages.append(f"Confidence {confidence} != awaited {awaited_confidence} || Line {line_num}: {content}")
+                    error_messages.append(
+                        f"Confidence {confidence} != awaited {awaited_confidence} || Line {line_num}: {content}")
             except (KeyError, IndexError, TypeError) as e:
                 print(f"Warning: Could not extract line number from finding: {e}")
         return error_messages
@@ -193,7 +194,7 @@ class TestE2E(unittest.TestCase):
                 report,
                 lambda finding: finding["confidence"],
                 lambda finding: finding["line"],
-                awaited_confidence=70,
+                awaited_confidence=Confidence.VERIFIED,
             )
             error_messages = line_numbers_errors + confidence_error
             if error_messages:
@@ -201,7 +202,6 @@ class TestE2E(unittest.TestCase):
                     error_messages,
                     msg="\n".join(error_messages) if error_messages else ""
                 )
-
 
     @patch(f"{MODULE}.RuntimeConfigReporter.pretty_runtime_cfg")
     @patch(f"{MODULE}.load_runtime_config")
@@ -223,8 +223,7 @@ class TestE2E(unittest.TestCase):
         with open(report_sarif, "r", encoding="utf-8") as f:
             report = json.load(f)["runs"][0]["results"]
 
-
-           #  self._validate_report_structure(findings, "SARIF")
+            #  self._validate_report_structure(findings, "SARIF")
 
             line_numbers_errors = self._validate_line_numbers(
                 report,
@@ -235,7 +234,7 @@ class TestE2E(unittest.TestCase):
                 report,
                 lambda finding: finding["properties"]["confidence"],
                 lambda finding: finding["locations"][0]["physicalLocation"]["region"]["startLine"],
-                awaited_confidence=70,
+                awaited_confidence=Confidence.VERIFIED,
             )
             error_messages = line_numbers_errors + confidence_error
 
