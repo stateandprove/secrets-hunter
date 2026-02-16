@@ -24,10 +24,10 @@ class ConsoleReporter(BaseConsoleReporter):
         sep = "=" * ConsoleReporter.WIDTH
         dash = "-" * ConsoleReporter.WIDTH
 
-        lines = [f"\nFound {total} potential secret{plural}:", sep]
+        lines: list[str] = [f"\nFound {total} potential secret{plural}:\n", sep]
 
         for i, f in enumerate(findings, 1):
-            lines.append(f"[{i}] {f.type} found at {f.file}:{f.line}")
+            lines.append(f"[{i}] {f.title}")
             lines.append(f"    Severity:   {f.severity} (confidence: {f.confidence}%, reasoning: {f.confidence_reasoning})")
 
             if getattr(f, "context_var", None):

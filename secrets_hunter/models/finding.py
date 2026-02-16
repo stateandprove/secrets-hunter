@@ -27,6 +27,7 @@ class Confidence(IntEnum):
 
 @dataclass(frozen=True)
 class Finding:
+    title: str
     file: str
     line: int
     type: str
@@ -41,6 +42,7 @@ class Finding:
     def reject(self, confidence_reasoning: str) -> 'Finding':
         return replace(
             self,
+            title="(REJECTED) " + self.title,
             severity=Severity.LOW,
             confidence=Confidence.REJECTED,
             confidence_reasoning=confidence_reasoning
@@ -63,7 +65,8 @@ class Finding:
         kwargs = {
             'context_var': var,
             'severity': severity,
-            'confidence': confidence
+            'confidence': confidence,
+            'title': f'Hardcoded {var.replace("_", " ")} at {self.file}:{self.line}'
         }
 
         if reasoning:
