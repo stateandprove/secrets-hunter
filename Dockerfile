@@ -36,5 +36,5 @@ RUN python -m pip install --upgrade pip \
 USER appuser
 WORKDIR /work
 
-ENTRYPOINT ["/bin/sh", "-c"]
-CMD ["secrets-hunter --help"]
+ENTRYPOINT ["/bin/sh"]
+CMD ["-c", "secrets-hunter --help"]
