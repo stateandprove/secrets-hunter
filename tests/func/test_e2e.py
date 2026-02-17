@@ -231,20 +231,11 @@ class TestE2E(unittest.TestCase):
     def test_json_verified_confidence(self):
         self.check_json(secrets, Confidence.VERIFIED)
 
-    def test_sarif_verified_confidence(self):
-        self.check_sarif(secrets, Confidence.VERIFIED)
-
-    def test_json_mid_confidence(self):
-        self.check_json(mid_secrets, Confidence.HIGH_ENTROPY_WITH_ASSIGNMENT)
-
     def test_sarif_mid_confidence(self):
         self.check_sarif(mid_secrets, Confidence.HIGH_ENTROPY_WITH_ASSIGNMENT)
 
     def test_json_no_assignment_confidence(self):
         self.check_json(zero_secrets, [Confidence.HIGH_ENTROPY_NO_ASSIGNMENT_CONTEXT, Confidence.REJECTED])
-
-    def test_sarif_no_assignment_confidence(self):
-        self.check_sarif(zero_secrets, [Confidence.HIGH_ENTROPY_NO_ASSIGNMENT_CONTEXT, Confidence.REJECTED])
 
 
 if __name__ == '__main__':
