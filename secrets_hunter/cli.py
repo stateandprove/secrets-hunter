@@ -117,13 +117,8 @@ def display_logo_with_version(logo, version):
     logo_lines = logo.strip('\n').split('\n')
     logo_width = max(len(line) for line in logo_lines)
 
-    dash_line = "─" * version_length
-    padding = (logo_width - version_length) // 2 - 3
-    version_ascii = f"""
-    {' ' * padding}{dash_line}
-    {' ' * padding}{version_text}
-    {' ' * padding}{dash_line}\n"""
-
+    padding = (logo_width - version_length)
+    version_ascii = f"""\n{' ' * padding}{version_text}\n"""
     print(logo + version_ascii)
 
 

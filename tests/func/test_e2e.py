@@ -10,9 +10,9 @@ from secrets_hunter.models import Confidence
 SCRIPT_DIR = Path(__file__).resolve().parent
 
 # Test data configuration
-secrets = str(SCRIPT_DIR / "secrets")
-mid_secrets = str(SCRIPT_DIR / "secrets")
-zero_secrets = str(SCRIPT_DIR / "secrets")
+secrets = str(SCRIPT_DIR / "secrets.txt")
+mid_secrets = str(SCRIPT_DIR / "secrets.txt")
+zero_secrets = str(SCRIPT_DIR / "secrets.txt")
 
 # Module and report paths
 MODULE = "secrets_hunter.cli"
