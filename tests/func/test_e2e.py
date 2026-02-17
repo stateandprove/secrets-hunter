@@ -11,8 +11,8 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 
 # Test data configuration
 secrets = str(SCRIPT_DIR / "secrets.txt")
-mid_secrets = str(SCRIPT_DIR / "secrets.txt")
-zero_secrets = str(SCRIPT_DIR / "secrets.txt")
+mid_secrets = str(SCRIPT_DIR / "mid_secrets.txt")
+zero_secrets = str(SCRIPT_DIR / "zero_secrets.txt")
 
 # Module and report paths
 MODULE = "secrets_hunter.cli"
@@ -133,14 +133,18 @@ class TestE2E(unittest.TestCase):
         for finding in findings:
             try:
                 confidence = confidence_extractor(finding)
-                if confidence != awaited_confidence:
+                confidence_result = confidence not in awaited_confidence if isinstance(awaited_confidence,
+                                                                                       list) else confidence != awaited_confidence
+                if confidence_result:
                     line_num = line_extractor(finding)
 
                     content = self._get_line_content(line_num)
                     error_messages.append(
                         f"Confidence {confidence} != awaited {awaited_confidence} || Line {line_num}: {content}")
+
             except (KeyError, IndexError, TypeError) as e:
                 print(f"Warning: Could not extract line number from finding: {e}")
+
         return error_messages
 
     def run_main(self, argv):
@@ -159,14 +163,9 @@ class TestE2E(unittest.TestCase):
                 __import__(MODULE, fromlist=["main"]).main()
             return cm.exception.code
 
-    def test_json(self):
-        """
-        Test JSON report generation.
-        Verifies that the JSON report contains the expected number of findings
-        and that each finding has the correct line number.
-        """
-        self.run_main([secrets, "--json", report_json])
-        self._load_source_lines(secrets)
+    def check_json(self, file_path, awaited_confidence):
+        self.run_main([file_path, "--json", report_json])
+        self._load_source_lines(file_path)
         time.sleep(0.1)
 
         self.assertTrue(
@@ -188,7 +187,7 @@ class TestE2E(unittest.TestCase):
                 report,
                 lambda finding: finding["confidence"],
                 lambda finding: finding["line"],
-                awaited_confidence=Confidence.VERIFIED,
+                awaited_confidence=awaited_confidence,
             )
             error_messages = line_numbers_errors + confidence_error
             if error_messages:
@@ -197,14 +196,9 @@ class TestE2E(unittest.TestCase):
                     msg="\n".join(error_messages) if error_messages else ""
                 )
 
-    def test_sarif(self):
-        """
-        Test SARIF report generation.
-        Verifies that the SARIF report contains the expected number of findings
-        and that each finding has the correct line number in the proper format.
-        """
-        self.run_main([secrets, "--sarif", report_sarif])
-        self._load_source_lines(secrets)
+    def check_sarif(self, file_path, awaited_confidence):
+        self.run_main([file_path, "--sarif", report_sarif])
+        self._load_source_lines(file_path)
         time.sleep(0.1)
 
         self.assertTrue(
@@ -224,7 +218,7 @@ class TestE2E(unittest.TestCase):
                 report,
                 lambda finding: finding["properties"]["confidence"],
                 lambda finding: finding["locations"][0]["physicalLocation"]["region"]["startLine"],
-                awaited_confidence=Confidence.VERIFIED,
+                awaited_confidence=awaited_confidence,
             )
             error_messages = line_numbers_errors + confidence_error
 
@@ -233,6 +227,15 @@ class TestE2E(unittest.TestCase):
                     error_messages,
                     msg="\n".join(error_messages) if error_messages else ""
                 )
+
+    def test_json_verified_confidence(self):
+        self.check_json(secrets, Confidence.VERIFIED)
+
+    def test_sarif_mid_confidence(self):
+        self.check_sarif(mid_secrets, Confidence.HIGH_ENTROPY_WITH_ASSIGNMENT)
+
+    def test_json_no_assignment_confidence(self):
+        self.check_json(zero_secrets, [Confidence.HIGH_ENTROPY_NO_ASSIGNMENT_CONTEXT, Confidence.REJECTED])
 
 
 if __name__ == '__main__':
