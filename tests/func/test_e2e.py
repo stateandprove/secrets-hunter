@@ -142,10 +142,6 @@ class TestE2E(unittest.TestCase):
             except (KeyError, IndexError, TypeError) as e:
                 print(f"Warning: Could not extract line number from finding: {e}")
         return error_messages
-        self.assertFalse(
-            error_messages,
-            msg="\n".join(error_messages) if error_messages else ""
-        )
 
     def run_main(self, argv):
         """
@@ -163,9 +159,7 @@ class TestE2E(unittest.TestCase):
                 __import__(MODULE, fromlist=["main"]).main()
             return cm.exception.code
 
-    @patch(f"{MODULE}.RuntimeConfigReporter.pretty_runtime_cfg")
-    @patch(f"{MODULE}.load_runtime_config")
-    def test_json(self, m_load_cfg, m_pretty):
+    def test_json(self):
         """
         Test JSON report generation.
         Verifies that the JSON report contains the expected number of findings
@@ -203,9 +197,7 @@ class TestE2E(unittest.TestCase):
                     msg="\n".join(error_messages) if error_messages else ""
                 )
 
-    @patch(f"{MODULE}.RuntimeConfigReporter.pretty_runtime_cfg")
-    @patch(f"{MODULE}.load_runtime_config")
-    def test_sarif(self, m_load_cfg, m_pretty):
+    def test_sarif(self):
         """
         Test SARIF report generation.
         Verifies that the SARIF report contains the expected number of findings
@@ -222,8 +214,6 @@ class TestE2E(unittest.TestCase):
 
         with open(report_sarif, "r", encoding="utf-8") as f:
             report = json.load(f)["runs"][0]["results"]
-
-            #  self._validate_report_structure(findings, "SARIF")
 
             line_numbers_errors = self._validate_line_numbers(
                 report,
