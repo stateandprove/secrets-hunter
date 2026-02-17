@@ -23,7 +23,7 @@ Homepage = "https://fvlcn.dev"
 secrets-hunter = "secrets_hunter.cli:main"
 
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["src"]
 include = ["secrets_hunter*"]
 exclude = ["tests*"]
 
