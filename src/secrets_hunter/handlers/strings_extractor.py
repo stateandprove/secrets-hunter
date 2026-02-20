@@ -47,10 +47,12 @@ class StringsExtractor:
             extracted_value = None
             for sep in ("=", ":"):
                 if sep in cleaned:
-                    _, rhs = cleaned.split(sep, 1)
-                    rhs = rhs.strip(STRIP)
-                    rhs = rhs.lstrip("=")
-                    if len(rhs) >= self.min_token_length:
+                    lhs, rhs = cleaned.split(sep, 1)
+                    lhs = lhs.strip(STRIP)
+                    rhs = rhs.strip(STRIP).lstrip("=")
+
+                    # Only treat as key=value if LHS looks like an identifier
+                    if re.match(r'^[a-zA-Z_][a-zA-Z0-9_\-]*$', lhs) and len(rhs) >= self.min_token_length:
                         extracted_value = rhs
                         break
 
