@@ -7,6 +7,12 @@ class StringsExtractor:
     def __init__(self, assignment_patterns, min_token_length):
         self.assignment_patterns = assignment_patterns
         self.min_token_length = min_token_length
+        self.max_identifier_len = 40
+
+        # snake_case, SCREAMING_SNAKE, camelCase
+        self._identifier_re = re.compile(
+            r'^(?:[a-z][a-z0-9]*(?:_[a-z0-9]+)*|[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*|[a-z][a-zA-Z0-9]*)$'
+        )
 
         # quoted strings (handles escapes)
         self._quoted_re = re.compile(r'"((?:\\.|[^"\\]){5,})"|\'((?:\\.|[^\'\\]){5,})\'|`((?:\\.|[^`\\]){5,})`')
@@ -22,6 +28,13 @@ class StringsExtractor:
                 var = match.group(1).lower()
                 val = match.group(2).strip().strip(STRIP)
                 out.setdefault(val, set()).add(var)
+
+                for sep in ("=", ":"):
+                    if sep in val:
+                        rhs = val.split(sep, 1)[1].strip(STRIP).lstrip("=")
+                        if rhs != val and len(rhs) > 0:
+                            out.setdefault(rhs, set()).add(var)
+                        break
 
         return out
 
@@ -51,9 +64,9 @@ class StringsExtractor:
                     lhs = lhs.strip(STRIP)
                     rhs = rhs.strip(STRIP).lstrip("=")
 
-                    # Only treat as key=value if LHS looks like an identifier
-                    if re.match(r'^[a-zA-Z_][a-zA-Z0-9_\-]*$', lhs) and len(rhs) >= self.min_token_length:
-                        extracted_value = rhs
+                    if self._identifier_re.match(lhs) and len(lhs) <= self.max_identifier_len:
+                        if len(rhs) >= self.min_token_length:
+                            extracted_value = rhs
                         break
 
             if extracted_value:
