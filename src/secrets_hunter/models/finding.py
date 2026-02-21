@@ -8,6 +8,7 @@ class Severity(str, Enum):
     HIGH = "HIGH"
     MEDIUM = "MEDIUM"
     LOW = "LOW"
+    INFO = "INFO"
 
     def __str__(self) -> str:
         return self.name
@@ -42,8 +43,8 @@ class Finding:
     def reject(self, confidence_reasoning: str) -> 'Finding':
         return replace(
             self,
-            title="(REJECTED) " + self.title,
-            severity=Severity.LOW,
+            title=self.title,
+            severity=Severity.INFO,
             confidence=Confidence.REJECTED,
             confidence_reasoning=confidence_reasoning
         )

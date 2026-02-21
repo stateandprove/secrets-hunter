@@ -102,32 +102,34 @@ class SecretsHunter:
             vars_ordered = sorted(vars_)
             best = next((v for v in vars_ordered if self.is_secret_var(v)[0]), vars_ordered[0])
 
-            reasoning = (
-                "High Entropy with assignment context"
-                if finding.detection_method == DetectionMethod.ENTROPY
-                else finding.confidence_reasoning
-            )
+            reasoning = finding.confidence_reasoning
+            severity = finding.severity
+            confidence = finding.confidence
+
+            if finding.detection_method == DetectionMethod.ENTROPY:
+                reasoning = "High Entropy with assignment context"
+                severity = Severity.MEDIUM
+                confidence = Confidence.HIGH_ENTROPY_WITH_ASSIGNMENT
 
             finding = finding.with_context(
                 var=best,
-                severity=Severity.MEDIUM,
-                confidence=Confidence.HIGH_ENTROPY_WITH_ASSIGNMENT,
+                severity=severity,
+                confidence=confidence,
                 reasoning=reasoning
             )
 
             is_secret, kw = self.is_secret_var(best)
 
             if is_secret:
-                reasoning = (
-                    f"High Entropy in context of secret key/variable assignment - {kw}"
-                    if finding.detection_method == DetectionMethod.ENTROPY
-                    else finding.confidence_reasoning
-                )
+                if finding.detection_method == DetectionMethod.ENTROPY:
+                    reasoning = f"High Entropy in context of secret key/variable assignment - {kw}"
+                    severity = Severity.CRITICAL
+                    confidence = Confidence.VERIFIED
 
                 finding = finding.with_context(
                     var=best,
-                    severity=Severity.CRITICAL,
-                    confidence=Confidence.VERIFIED,
+                    severity=severity,
+                    confidence=confidence,
                     reasoning=reasoning
                 )
 
