@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "secrets-hunter"
-version = "1.0.0.rc1"
+version = "0.4.0"
 description = "Detect secrets and sensitive information in your codebase"
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.11"
@@ -23,7 +23,7 @@ Homepage = "https://fvlcn.dev"
 secrets-hunter = "secrets_hunter.cli:main"
 
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["src"]
 include = ["secrets_hunter*"]
 exclude = ["tests*"]
 

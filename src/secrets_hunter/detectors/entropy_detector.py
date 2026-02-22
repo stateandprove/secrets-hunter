@@ -1,3 +1,5 @@
+import re
+
 from secrets_hunter.detectors.base import BaseDetector
 from secrets_hunter.models import Finding, DetectionMethod, Severity, Confidence
 from secrets_hunter.config import CLIArgs
@@ -11,6 +13,7 @@ class EntropyDetector(BaseDetector):
     def __init__(self, cli_args: CLIArgs):
         super().__init__()
         self.cli_args = cli_args
+        self.ignore_prefixes = re.compile(r'^(?:sha\d+|md5)[-:]', re.IGNORECASE)
 
     def detect(
         self,
@@ -22,10 +25,12 @@ class EntropyDetector(BaseDetector):
         findings = []
 
         for string in strings:
-            entropy = entropy_utils.calculate_shannon_entropy(string)
-            is_hex = entropy_utils.is_hex_string(string)
-            is_base64 = entropy_utils.is_base64_string(string)
-            is_base64url = entropy_utils.is_base64url_string(string)
+            cleaned = self.ignore_prefixes.sub('', string)
+
+            entropy = entropy_utils.calculate_shannon_entropy(cleaned)
+            is_hex = entropy_utils.is_hex_string(cleaned)
+            is_base64 = entropy_utils.is_base64_string(cleaned)
+            is_base64url = entropy_utils.is_base64url_string(cleaned)
 
             is_high_entropy = False
             string_type = None

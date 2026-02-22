@@ -5,5 +5,5 @@
 !README.md
 !LICENSE
 
-!secrets_hunter/
-!secrets_hunter/**
+!src/
+!src/**

@@ -1,5 +1,4 @@
 from dataclasses import dataclass, replace
-from typing import Optional
 from enum import Enum, IntEnum
 
 
@@ -38,7 +37,7 @@ class Finding:
     confidence_reasoning: str
     detection_method: DetectionMethod
     confidence: Confidence
-    context_var: Optional[str] = None
+    context_var: str | None = None
 
     def reject(self, confidence_reasoning: str) -> 'Finding':
         return replace(
@@ -61,7 +60,7 @@ class Finding:
         var: str,
         severity: Severity,
         confidence: Confidence,
-        reasoning: str = None
+        reasoning: str | None = None
     ) -> 'Finding':
         kwargs = {
             'context_var': var,
