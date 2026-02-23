@@ -79,7 +79,7 @@ Export results to JSON:
 secrets-hunter . --json results.json
 ```
 
-See the [Usage docs](docs/usage.md) for all flags and more examples.
+See the [Usage docs](https://docs.fvlcn.dev/secrets-hunter/usage/) for all flags and more examples.
 
 ## Configuration
 
@@ -98,7 +98,7 @@ Multiple overlays are applied **in the order provided**:
 secrets-hunter . --config ci.toml --config local.toml
 ```
 
-A full description and usage examples are available in [Configuration docs](docs/config.md).
+A full description and usage examples are available in [Configuration docs](https://docs.fvlcn.dev/secrets-hunter/config/).
 
 ## License
 
