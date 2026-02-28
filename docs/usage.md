@@ -216,7 +216,7 @@ Apply multiple configuration files in sequence:
 secrets-hunter . --config ci.toml --config local.toml
 ```
 
-Learn more about configuration in the [Configuration docs](config.md).
+Learn more about configuration in the [Configuration docs](https://docs.fvlcn.dev/secrets-hunter/config/).
 
 ---
 
