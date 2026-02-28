@@ -76,5 +76,5 @@ docker run --rm ghcr.io/fvlcn/secrets-hunter:latest --help
 
 Mount the directory you want to scan as a volume and pass it as an argument:
 ```bash
-docker run --rm -v ~/projects/my-app:/scan ghcr.io/fvlcn/secrets-hunter:latest scan /scan
+docker run --rm -v ~/projects/my-app:/scan ghcr.io/fvlcn/secrets-hunter:latest /scan
 ```
