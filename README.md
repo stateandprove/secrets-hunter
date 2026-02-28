@@ -25,33 +25,12 @@ All of these patterns are fully configurable via TOML config overlays (see [Conf
 
 > **Requirements:** Python 3.11+
 
-### From PyPI
-
+Secrets Hunter can be installed via PyPI, from source, or using Docker. For a quick start, install directly from PyPI:
 ```bash
 pip install secrets-hunter
 ```
 
-### From source
-
-1) Clone this repository
-
-```bash
-git clone https://github.com/FVLCN/secrets-hunter.git secrets-hunter
-cd secrets-hunter
-```
-
-2) Activate virtual environment (macOS and Linux)
-
-```bash
-python -m venv venv
-source venv/bin/activate
-```
-
-3) Build and install package
-
-```bash
-pip install -e .
-```
+For installation from source or Docker, see the [Installation docs](https://docs.fvlcn.dev/secrets-hunter/installation/).
 
 ## Quick start
 
@@ -102,7 +81,7 @@ A full description and usage examples are available in [Configuration docs](http
 
 ## License
 
-MIT
+Secrets Hunter is released under the MIT License, meaning you are free to use, modify, and distribute it for both personal and commercial purposes.
 
 ## Acknowledgment
 
