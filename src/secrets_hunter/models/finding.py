@@ -4,10 +4,10 @@ from enum import Enum, IntEnum
 
 class Severity(str, Enum):
     CRITICAL = "CRITICAL"
-    HIGH = "HIGH"
-    MEDIUM = "MEDIUM"
-    LOW = "LOW"
-    INFO = "INFO"
+    HIGH     = "HIGH"
+    MEDIUM   = "MEDIUM"
+    LOW      = "LOW"
+    INFO     = "INFO"
 
     def __str__(self) -> str:
         return self.name
@@ -19,10 +19,10 @@ class DetectionMethod(str, Enum):
 
 
 class Confidence(IntEnum):
-    REJECTED = 0
+    REJECTED                           = 0
     HIGH_ENTROPY_NO_ASSIGNMENT_CONTEXT = 5
-    HIGH_ENTROPY_WITH_ASSIGNMENT = 75
-    VERIFIED = 100
+    HIGH_ENTROPY_WITH_ASSIGNMENT       = 75
+    VERIFIED                           = 100
 
 
 @dataclass(frozen=True)

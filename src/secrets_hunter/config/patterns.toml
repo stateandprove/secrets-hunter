@@ -35,7 +35,6 @@ exclude_keywords = [
     'hash',
     'integrity',
     'sum',
-    'name',
     'version',
     'public',
     'example',

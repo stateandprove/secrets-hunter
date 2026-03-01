@@ -9,6 +9,7 @@ from secrets_hunter.detectors.pattern_detector import PatternDetector
 from secrets_hunter.validators import FalsePositiveFindingsValidator
 from secrets_hunter.handlers import FileHandler, StringsExtractor, FindingsProcessor
 from secrets_hunter.handlers.progress_bar import FileProgressBar, FolderProgressBar
+from secrets_hunter.semantics import StringClassifier
 from secrets_hunter.models import Finding, Severity, DetectionMethod, Confidence
 
 logger = logging.getLogger(__name__)
@@ -27,7 +28,8 @@ class SecretsHunter:
         )
         self.false_positive_validator = FalsePositiveFindingsValidator(
             exclude_patterns=self.runtime_cfg.exclude_patterns,
-            exclude_keywords=self.runtime_cfg.exclude_keywords
+            exclude_keywords=self.runtime_cfg.exclude_keywords,
+            string_classifier=StringClassifier()
         )
         self.strings_extractor = StringsExtractor(
             assignment_patterns=self.runtime_cfg.assignment_patterns,
@@ -83,10 +85,6 @@ class SecretsHunter:
 
         for finding in findings:
             match = finding.match
-
-            if not match:
-                continue
-
             match_rejected, rejected_by = self.false_positive_validator.check_rejection_for_value(match)
             norm_match = match.strip().strip(STRIP)
             vars_ = ctx.get(match) or ctx.get(norm_match)
