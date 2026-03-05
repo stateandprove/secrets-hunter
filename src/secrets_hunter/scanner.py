@@ -7,7 +7,12 @@ from secrets_hunter.config import CLIArgs, RuntimeConfig, STRIP
 from secrets_hunter.detectors.entropy_detector import EntropyDetector
 from secrets_hunter.detectors.pattern_detector import PatternDetector
 from secrets_hunter.validators import FalsePositiveFindingsValidator
-from secrets_hunter.handlers import FileHandler, StringsExtractor, FindingsProcessor
+from secrets_hunter.handlers import (
+    FileHandler,
+    StringsExtractor,
+    FindingsProcessor,
+    PEMAwareLinesReader
+)
 from secrets_hunter.handlers.progress_bar import FileProgressBar, FolderProgressBar
 from secrets_hunter.semantics import StringClassifier
 from secrets_hunter.models import Finding, Severity, DetectionMethod, Confidence
@@ -21,6 +26,7 @@ class SecretsHunter:
         self.runtime_cfg = runtime_cfg
         self.pattern_detector = PatternDetector(self.runtime_cfg.secret_patterns)
         self.entropy_detector = EntropyDetector(self.cli_args)
+        self.lines_reader = PEMAwareLinesReader()
         self.file_handler = FileHandler(
             set(self.runtime_cfg.ignore_files),
             set(self.runtime_cfg.ignore_extensions),
@@ -163,7 +169,7 @@ class SecretsHunter:
             if lines is None:
                 logger.error(f"Failed to read file: {filepath}")
             else:
-                for line_num, line in enumerate(lines, 1):
+                for line_num, line in self.lines_reader.read(lines):
                     line_findings = self.extract_findings_from_line(line_num, line, filepath)
                     findings.extend(line_findings)
                     last_line_number = line_num

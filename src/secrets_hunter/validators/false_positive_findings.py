@@ -1,5 +1,7 @@
 import re
 
+from secrets_hunter.config import PEM_BEGIN_RE
+
 
 class FalsePositiveFindingsValidator:
     def __init__(self, exclude_patterns, exclude_keywords, string_classifier):
@@ -14,6 +16,9 @@ class FalsePositiveFindingsValidator:
             if re.search(pattern, string_lower):
                 rejected_by = pattern.pattern
                 return True, rejected_by
+
+        if PEM_BEGIN_RE.match(string):
+            return False, ""
 
         string_classification = self.string_classifier.classify(string)
 

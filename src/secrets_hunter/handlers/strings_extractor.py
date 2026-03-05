@@ -1,6 +1,6 @@
 import re
 
-from secrets_hunter.config import STRIP
+from secrets_hunter.config import STRIP, PEM_BEGIN_RE
 
 
 class StringsExtractor:
@@ -42,9 +42,16 @@ class StringsExtractor:
         """Extract all potential strings from a line"""
         strings = []
 
+        # 0) extract PEM headers whole before anything splits them
+        line_wo_pem = line
+        for m in PEM_BEGIN_RE.finditer(line):
+            strings.append(m.group(0))
+            start, end = m.span()
+            line_wo_pem = line_wo_pem[:start] + " " * (end - start) + line_wo_pem[end:]
+
         # 1) collect quoted strings + blank them out
-        line_wo_quotes = line
-        for m in self._quoted_re.finditer(line):
+        line_wo_quotes = line_wo_pem
+        for m in self._quoted_re.finditer(line_wo_pem):
             s = m.group(1) or m.group(2) or m.group(3)
             if s:
                 strings.append(s)
