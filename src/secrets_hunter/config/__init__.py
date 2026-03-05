@@ -1,5 +1,5 @@
 from .loader import get_runtime_config, load_runtime_config, RuntimeConfig
-from .settings import CLIArgs, CLIDefaults, STRIP
+from .settings import CLIArgs, CLIDefaults, STRIP, PEM_BEGIN_RE, PEM_END_RE
 
 __all__ = [
     "get_runtime_config",
@@ -7,5 +7,7 @@ __all__ = [
     "RuntimeConfig",
     "CLIDefaults",
     "CLIArgs",
-    "STRIP"
+    "STRIP",
+    "PEM_BEGIN_RE",
+    "PEM_END_RE"
 ]

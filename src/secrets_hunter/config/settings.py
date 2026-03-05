@@ -1,3 +1,5 @@
+import re
+
 from dataclasses import dataclass
 
 
@@ -5,6 +7,24 @@ HEX_ENTROPY_MAX = 4.5
 B64_ENTROPY_MAX = 6.0
 MAX_WORKERS_MULTIPLIER = 2
 STRIP = '.,;:()[]{}<>"\'`'
+
+PEM_TYPES = [
+    "PRIVATE KEY",
+    "PUBLIC KEY",
+    "CERTIFICATE",
+    "RSA PRIVATE KEY",
+    "EC PRIVATE KEY",
+    "DSA PRIVATE KEY",
+    "OPENSSH PRIVATE KEY",
+    "ENCRYPTED PRIVATE KEY",
+    "CERTIFICATE REQUEST",
+    "CRL"
+]
+
+pem_group = "|".join(PEM_TYPES)
+
+PEM_BEGIN_RE = re.compile(rf'-----BEGIN ({pem_group})-----')
+PEM_END_RE   = re.compile(rf'-----END ({pem_group})-----')
 
 
 class FileSettings:

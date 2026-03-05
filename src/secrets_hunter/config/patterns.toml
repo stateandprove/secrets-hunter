@@ -17,6 +17,8 @@ exclude_patterns = [
     'demo',
     'placeholder',
     '12345',
+    'abc123',
+    'a1b2c3',
     'abcde',
     'aaaaa',
     'xxxxx',
@@ -24,7 +26,9 @@ exclude_patterns = [
     'fake',
     'mock',
     'testpass',
-    'blob'
+    'blob',
+    'qwen',
+    'webpack'
 ]
 
 exclude_keywords = [
@@ -35,9 +39,10 @@ exclude_keywords = [
     'hash',
     'integrity',
     'sum',
-    'name',
     'version',
     'public',
+    'certificate',
+    'cert',
     'example',
     'sample',
     'test',
@@ -68,8 +73,6 @@ secret_keywords = [
     'encryption',
     'decrypt',
     'salt',
-    'certificate',
-    'cert',
     'pem',
     'p12',
     'pfx',
