@@ -85,4 +85,4 @@ Secrets Hunter is released under the MIT License, meaning you are free to use, m
 
 ## Acknowledgment
 
-This project was made possible by [whitespots.io](https://whitespots.io)
+This project was made possible by [whitespots.io](https://whitespots.io).
