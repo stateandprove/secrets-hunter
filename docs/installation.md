@@ -69,7 +69,7 @@ docker pull ghcr.io/fvlcn/secrets-hunter:latest
 ### Verify the installation
 
 ```bash
-docker run --rm ghcr.io/fvlcn/secrets-hunter:latest --help
+docker run --rm ghcr.io/fvlcn/secrets-hunter:latest --version
 ```
 
 ### Run a scan
