@@ -1,9 +1,13 @@
 import re
 
-from secrets_hunter.config import STRIP, PEM_BEGIN_RE
+from secrets_hunter.config import STRIP, PEM_BEGIN_RE, DB_URI_RE
+from secrets_hunter.models.line_fragment import LineFragment, StringSource
 
 
-class StringsExtractor:
+class LineFragmenter:
+    """
+    Extracts candidate secret fragments from a single source line.
+    """
     def __init__(self, assignment_patterns, min_token_length):
         self.assignment_patterns = assignment_patterns
         self.min_token_length = min_token_length
@@ -38,23 +42,39 @@ class StringsExtractor:
 
         return out
 
-    def extract(self, line: str) -> list[str]:
-        """Extract all potential strings from a line"""
-        strings = []
+    @staticmethod
+    def _extract_and_blank(
+        line: str,
+        pattern,
+        source: StringSource
+    ) -> tuple[str, list[LineFragment]]:
+        """Match all occurrences of pattern, collect as LineFragments, blank them out."""
+        fragments = []
 
-        # 0) extract PEM headers whole before anything splits them
-        line_wo_pem = line
-        for m in PEM_BEGIN_RE.finditer(line):
-            strings.append(m.group(0))
+        for m in pattern.finditer(line):
+            fragments.append(LineFragment(m.group(0), source))
             start, end = m.span()
-            line_wo_pem = line_wo_pem[:start] + " " * (end - start) + line_wo_pem[end:]
+            line = line[:start] + " " * (end - start) + line[end:]
+
+        return line, fragments
+
+    def extract(self, line: str) -> list[LineFragment]:
+        fragments = []
+
+        # PEM headers, DB URIs
+        line, pem = self._extract_and_blank(line, PEM_BEGIN_RE, StringSource.PEM_HEADER)
+        fragments.extend(pem)
+        line, db_conn = self._extract_and_blank(line, DB_URI_RE, StringSource.DB_CONNECTION)
+        fragments.extend(db_conn)
 
         # 1) collect quoted strings + blank them out
-        line_wo_quotes = line_wo_pem
-        for m in self._quoted_re.finditer(line_wo_pem):
+        line_wo_quotes = line
+        for m in self._quoted_re.finditer(line):
             s = m.group(1) or m.group(2) or m.group(3)
+
             if s:
-                strings.append(s)
+                fragments.append(LineFragment(s))
+
             # remove whole quoted span to avoid extracting them twice
             start, end = m.span()
             line_wo_quotes = line_wo_quotes[:start] + " " * (end - start) + line_wo_quotes[end:]
@@ -77,16 +97,16 @@ class StringsExtractor:
                         break
 
             if extracted_value:
-                strings.append(extracted_value)
+                fragments.append(LineFragment(extracted_value))
             else:
                 if len(cleaned) >= self.min_token_length:
-                    strings.append(cleaned)
+                    fragments.append(LineFragment(cleaned))
 
         seen = set()
         unique_strings = []
-        for s in strings:
-            if s not in seen:
-                seen.add(s)
-                unique_strings.append(s)
+        for f in fragments:
+            if f.text not in seen:
+                seen.add(f.text)
+                unique_strings.append(f)
 
         return unique_strings

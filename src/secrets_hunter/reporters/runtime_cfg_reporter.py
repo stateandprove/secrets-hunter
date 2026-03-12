@@ -1,8 +1,9 @@
 import re
 
-from typing import Any, Iterable, Mapping
+from typing import Iterable, Mapping
 
 from secrets_hunter.reporters.console_base import BaseConsoleReporter
+from secrets_hunter.models.config import ExcludePattern
 from secrets_hunter.config.loader import FLAG_MAP
 from secrets_hunter.config import RuntimeConfig
 
@@ -38,7 +39,7 @@ class RuntimeConfigReporter(BaseConsoleReporter):
         return f"/{p.pattern}/"
 
     @staticmethod
-    def as_mapping(obj: Any) -> Mapping[str, Any]:
+    def as_mapping(obj: object) -> Mapping[str, object]:
         if isinstance(obj, Mapping):
             return obj
 
@@ -79,6 +80,10 @@ class RuntimeConfigReporter(BaseConsoleReporter):
                 RuntimeConfigReporter.add_section(lines, f"{key} ({len(items)})")
 
                 for item in items:
+                    if isinstance(item, ExcludePattern):
+                        lines.append(f"  - {item.name} {item.category} - {item.pattern.pattern}")
+                        continue
+
                     lines.append(
                         f"  - {RuntimeConfigReporter.re_to_str(item) if isinstance(item, re.Pattern) else item!r}"
                     )

@@ -1,12 +1,12 @@
 import re
 import tomllib
 
-from dataclasses import dataclass
 from hashlib import sha256
 from importlib.resources import files as res_files
 from pathlib import Path
 from typing import Any
 
+from secrets_hunter.models.config import ExcludePattern, RuntimeConfig
 
 FLAG_MAP: dict[str, int] = {
     "IGNORECASE": re.IGNORECASE,
@@ -17,41 +17,56 @@ FLAG_MAP: dict[str, int] = {
 }
 
 
-@dataclass(frozen=True)
-class RuntimeConfig:
-    secret_patterns: dict[str, re.Pattern]
-    exclude_patterns: list[re.Pattern]
-    exclude_keywords: list[str]
-    secret_keywords: list[str]
-    assignment_patterns: list[re.Pattern]
-    ignore_files: tuple[str, ...]
-    ignore_extensions: tuple[str, ...]
-    ignore_dirs: tuple[str, ...]
-
-
 def require_table(value: Any, key: str, file: Path) -> dict[str, Any]:
     if value is None:
         return {}
+
     if not isinstance(value, dict):
         raise ValueError(f"'{key}' must be a table in {file}")
+
     return value
 
 
 def require_list(data: dict[str, Any], key: str, file: Path) -> list[Any]:
-    v = data.get(key, [])
-    if v is None:
-        return []
+    v = data.get(key) or []
+
     if not isinstance(v, list):
         raise ValueError(f"'{key}' must be a list in {file}")
+
     return v
 
 
 def require_string_list(data: dict[str, Any], key: str, file: Path) -> list[str]:
     v = require_list(data, key, file)
+
     for i, item in enumerate(v):
         if not isinstance(item, str):
             raise ValueError(f"'{key}[{i}]' must be a string in {file}, got {type(item).__name__}")
+
     return v
+
+
+def require_pattern_item(item: Any, key: str, required_fields: set[str], file: Path) -> dict[str, Any]:
+    if not isinstance(item, dict):
+        raise ValueError(f"'{key}' items must be tables in {file}: {item!r}")
+
+    missing = required_fields - item.keys()
+
+    if missing:
+        raise ValueError(f"'{key}' item in {file} missing fields {missing}: {item!r}")
+
+    flags = item.get("flags") or []
+
+    if not isinstance(flags, list) or any(not isinstance(x, str) for x in flags):
+        raise ValueError(f"'{key}' item in {file} 'flags' must be a list of strings: {item!r}")
+
+    item["flags"] = flags
+    return item
+
+
+def remove_from_list(lst: list[str], names: list[str]) -> list[str]:
+    names_set = set(names)
+    return [x for x in lst if x not in names_set]
 
 
 def read_toml(path: Path) -> dict[str, Any]:
@@ -117,7 +132,7 @@ def load_runtime_config(user_configs: list[str | Path] | None = None) -> Runtime
 
     # aggregated (raw)
     secret_patterns_by_name: dict[str, dict[str, Any]] = {}
-    exclude_patterns: list[str] = []
+    exclude_patterns_by_name: dict[str, dict[str, Any]] = {}
     exclude_keywords: list[str] = []
     secret_keywords: list[str] = []
     assignment_patterns: list[str] = []
@@ -132,58 +147,38 @@ def load_runtime_config(user_configs: list[str | Path] | None = None) -> Runtime
         for name in require_string_list(data, "remove_secret_patterns", f):
             secret_patterns_by_name.pop(name, None)
 
-        rm_files = set(require_string_list(data, "remove_ignore_files", f))
-        rm_ext = set(require_string_list(data, "remove_ignore_extensions", f))
-        rm_dirs = set(require_string_list(data, "remove_ignore_dirs", f))
+        for name in require_string_list(data, "remove_exclude_patterns", f):
+            exclude_patterns_by_name.pop(name, None)
 
-        if rm_files:
-            ignore_files = [x for x in ignore_files if x not in rm_files]
-        if rm_ext:
-            ignore_ext = [x for x in ignore_ext if x not in rm_ext]
-        if rm_dirs:
-            ignore_dirs = [x for x in ignore_dirs if x not in rm_dirs]
+        ignore_files = remove_from_list(
+            ignore_files, require_string_list(data, "remove_ignore_files", f)
+        )
+        ignore_ext = remove_from_list(
+            ignore_ext, require_string_list(data, "remove_ignore_extensions", f)
+        )
+        ignore_dirs = remove_from_list(
+            ignore_dirs, require_string_list(data, "remove_ignore_dirs", f)
+        )
+        exclude_keywords = remove_from_list(
+            exclude_keywords, require_string_list(data, "remove_exclude_keywords", f)
+        )
+        secret_keywords = remove_from_list(
+            secret_keywords, require_string_list(data, "remove_secret_keywords", f)
+        )
+        assignment_patterns = remove_from_list(
+            assignment_patterns, require_string_list(data, "remove_assignment_patterns", f)
+        )
 
-        rm_excl_p = set(require_string_list(data, "remove_exclude_patterns", f))
-        rm_excl_kw = set(require_string_list(data, "remove_exclude_keywords", f))
-        rm_kw = set(require_string_list(data, "remove_secret_keywords", f))
-        rm_asg = set(require_string_list(data, "remove_assignment_patterns", f))
+        # patterns
+        for item in require_list(data, "secret_patterns", f):
+            item = require_pattern_item(item, "secret_patterns", {"name", "pattern"}, f)
+            secret_patterns_by_name[item["name"]] = {"pattern": item["pattern"], "flags": item["flags"]}
 
-        if rm_excl_p:
-            exclude_patterns = [x for x in exclude_patterns if x not in rm_excl_p]
-        if rm_excl_kw:
-            exclude_keywords = [x for x in exclude_keywords if x not in rm_excl_kw]
-        if rm_kw:
-            secret_keywords = [x for x in secret_keywords if x not in rm_kw]
-        if rm_asg:
-            assignment_patterns = [x for x in assignment_patterns if x not in rm_asg]
-
-        # secret patterns (override by name)
-        secret_items = require_list(data, "secret_patterns", f)
-        for item in secret_items:
-            if not isinstance(item, dict):
-                raise ValueError(f"'secret_patterns' items must be tables in {f}: {item!r}")
-
-            if "name" not in item or "pattern" not in item:
-                raise ValueError(f"Secret pattern in {f} missing 'name' or 'pattern': {item!r}")
-
-            flags = item.get("flags", [])
-            if flags is None:
-                flags = []
-            if not isinstance(flags, list) or any(not isinstance(x, str) for x in flags):
-                raise ValueError(f"Secret pattern 'flags' must be a list of strings in {f}: {item!r}")
-
-            name = item["name"]
-            if not isinstance(name, str) or not name.strip():
-                raise ValueError(f"Secret pattern 'name' must be a non-empty string in {f}: {item!r}")
-
-            pattern = item["pattern"]
-            if not isinstance(pattern, str) or not pattern:
-                raise ValueError(f"Secret pattern 'pattern' must be a non-empty string in {f}: {item!r}")
-
-            secret_patterns_by_name[name] = {"pattern": pattern, "flags": flags}
+        for item in require_list(data, "exclude_patterns", f):
+            item = require_pattern_item(item, "exclude_patterns", {"name", "pattern", "category"}, f)
+            exclude_patterns_by_name[item["name"]] = item
 
         # lists
-        exclude_patterns.extend(require_string_list(data, "exclude_patterns", f))
         exclude_keywords.extend(require_string_list(data, "exclude_keywords", f))
         secret_keywords.extend(require_string_list(data, "secret_keywords", f))
         assignment_patterns.extend(require_string_list(data, "assignment_patterns", f))
@@ -195,7 +190,6 @@ def load_runtime_config(user_configs: list[str | Path] | None = None) -> Runtime
         ignore_dirs.extend(require_string_list(ig, "dirs", f))
 
     # deduplication
-    exclude_patterns = deduplicate_keep_order(exclude_patterns)
     exclude_keywords = deduplicate_keep_order(exclude_keywords)
     secret_keywords = deduplicate_keep_order(secret_keywords)
     assignment_patterns = deduplicate_keep_order(assignment_patterns)
@@ -208,10 +202,16 @@ def load_runtime_config(user_configs: list[str | Path] | None = None) -> Runtime
         name: re_compile(v["pattern"], v.get("flags"), source=f"secret_patterns[{name}]")
         for name, v in secret_patterns_by_name.items()
     }
+
     compiled_exclude_patterns = [
-        re_compile(p, source=f"exclude_patterns[{i}]")
-        for i, p in enumerate(exclude_patterns)
+        ExcludePattern(
+            pattern=re_compile(ep["pattern"], ep.get("flags"), source=f"exclude_patterns[{ep['name']}]"),
+            name=ep["name"],
+            category=ep["category"]
+        )
+        for ep in exclude_patterns_by_name.values()
     ]
+
     compiled_assignment = [
         re_compile(p, source=f"assignment_patterns[{i}]")
         for i, p in enumerate(assignment_patterns)
@@ -235,6 +235,7 @@ CONFIG_CACHE: dict[str, RuntimeConfig] = {}
 def _config_key(user_configs: list[str | Path] | None) -> str:
     if not user_configs:
         return ""
+
     paths = [str(Path(p).expanduser().resolve()) for p in user_configs]  # normalize
     return sha256("\n".join(paths).encode("utf-8")).hexdigest()
 

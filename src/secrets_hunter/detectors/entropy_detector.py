@@ -1,8 +1,10 @@
 import re
 
 from secrets_hunter.detectors.base import BaseDetector
-from secrets_hunter.models import Finding, DetectionMethod, Severity, Confidence
 from secrets_hunter.config import CLIArgs
+from secrets_hunter.models import (
+    Finding, DetectionMethod, Severity, Confidence, LineFragment
+)
 
 from .utils import entropy as entropy_utils
 
@@ -20,12 +22,12 @@ class EntropyDetector(BaseDetector):
         line: str,
         line_num: int,
         filepath: str,
-        strings: list[str]
+        fragments: list[LineFragment]
     ) -> list[Finding]:
         findings = []
 
-        for string in strings:
-            cleaned = self.ignore_prefixes.sub('', string)
+        for fragment in fragments:
+            cleaned = self.ignore_prefixes.sub('', fragment.text)
 
             entropy = entropy_utils.calculate_shannon_entropy(cleaned)
             is_hex = entropy_utils.is_hex_string(cleaned)
@@ -53,7 +55,8 @@ class EntropyDetector(BaseDetector):
                 line=line_num,
                 severity=Severity.LOW,
                 type=string_type,
-                match=string,
+                source=fragment.source,
+                match=fragment.text,
                 context=line.strip()[:100],
                 detection_method=DetectionMethod.ENTROPY,
                 confidence=Confidence.HIGH_ENTROPY_NO_ASSIGNMENT_CONTEXT,

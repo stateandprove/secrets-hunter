@@ -1,6 +1,7 @@
 import logging
 
 from typing import Iterable
+from pathlib import Path
 
 from secrets_hunter.config import PEM_BEGIN_RE, PEM_END_RE
 
@@ -8,12 +9,12 @@ logger = logging.getLogger(__name__)
 
 
 class LinesReader:
-    def read(self, lines: Iterable[str]):
+    def read(self, lines: Iterable[str], filtepath: Path):
         yield from enumerate(lines, 1)
 
 
 class PEMAwareLinesReader(LinesReader):
-    def read(self, lines: Iterable[str]):
+    def read(self, lines: Iterable[str], filepath: Path):
         iterator = enumerate(lines, 1)
 
         for line_num, line in iterator:
@@ -34,4 +35,5 @@ class PEMAwareLinesReader(LinesReader):
                     break
 
             if not found_end:
-                logger.warning(f"Truncated PEM block detected after line {line_num}")
+                print()
+                logger.warning(f"{filepath}: truncated PEM block detected after line {line_num}")

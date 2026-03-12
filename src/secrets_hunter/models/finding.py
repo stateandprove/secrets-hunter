@@ -1,5 +1,9 @@
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, replace, asdict
 from enum import Enum, IntEnum
+
+from .line_fragment import StringSource
+
+DISPLAY_EXCLUDED_FIELDS = {"source"}
 
 
 class Severity(str, Enum):
@@ -37,12 +41,20 @@ class Finding:
     confidence_reasoning: str
     detection_method: DetectionMethod
     confidence: Confidence
+    source: StringSource = StringSource.GENERIC
     context_var: str | None = None
+
+    def to_display(self) -> dict[str, object]:
+        data = asdict(self)
+
+        for field in DISPLAY_EXCLUDED_FIELDS:
+            data.pop(field, None)
+
+        return data
 
     def reject(self, confidence_reasoning: str) -> 'Finding':
         return replace(
             self,
-            title=self.title,
             severity=Severity.INFO,
             confidence=Confidence.REJECTED,
             confidence_reasoning=confidence_reasoning

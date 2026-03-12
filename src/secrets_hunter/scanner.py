@@ -3,19 +3,17 @@ import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-from secrets_hunter.config import CLIArgs, RuntimeConfig, STRIP
+from secrets_hunter.config import CLIArgs, STRIP
 from secrets_hunter.detectors.entropy_detector import EntropyDetector
 from secrets_hunter.detectors.pattern_detector import PatternDetector
 from secrets_hunter.validators import FalsePositiveFindingsValidator
-from secrets_hunter.handlers import (
-    FileHandler,
-    StringsExtractor,
-    FindingsProcessor,
-    PEMAwareLinesReader
-)
 from secrets_hunter.handlers.progress_bar import FileProgressBar, FolderProgressBar
-from secrets_hunter.semantics import StringClassifier
+from secrets_hunter.semantics import StringSemanticsClassifier
 from secrets_hunter.models import Finding, Severity, DetectionMethod, Confidence
+from secrets_hunter.models.config import RuntimeConfig
+from secrets_hunter.handlers import (
+    FileHandler, LineFragmenter, FindingsProcessor, PEMAwareLinesReader
+)
 
 logger = logging.getLogger(__name__)
 
@@ -35,9 +33,9 @@ class SecretsHunter:
         self.false_positive_validator = FalsePositiveFindingsValidator(
             exclude_patterns=self.runtime_cfg.exclude_patterns,
             exclude_keywords=self.runtime_cfg.exclude_keywords,
-            string_classifier=StringClassifier()
+            string_semantics_classifier=StringSemanticsClassifier()
         )
-        self.strings_extractor = StringsExtractor(
+        self.lines_fragmenter = LineFragmenter(
             assignment_patterns=self.runtime_cfg.assignment_patterns,
             min_token_length=self.cli_args.min_string_length
         )
@@ -53,19 +51,19 @@ class SecretsHunter:
 
     def extract_findings_from_line(self, line_num: int, line: str, filepath: Path) -> list[Finding]:
         # Step 1: Extract all strings from a line
-        all_strings = self.strings_extractor.extract(line)
+        all_fragments = self.lines_fragmenter.extract(line)
 
-        if not all_strings:
+        if not all_fragments:
             return []
 
         # Step 2: Find high entropy strings
         entropy_findings = self.entropy_detector.detect(
-            line, line_num, str(filepath), all_strings
+            line, line_num, str(filepath), all_fragments
         )
 
         # Step 3: Find pattern matching strings
         pattern_findings = self.pattern_detector.detect(
-            line, line_num, str(filepath), all_strings
+            line, line_num, str(filepath), all_fragments
         )
 
         # Step 3.5: prioritize pattern findings (dedupe by match)
@@ -81,7 +79,7 @@ class SecretsHunter:
             return []
 
         # Step 4: Check and process the assignment context
-        assignment_context = self.strings_extractor.assignment_map(line)
+        assignment_context = self.lines_fragmenter.assignment_map(line)
         transformed_findings = self._process_assignment_context(all_line_findings, assignment_context)
 
         return transformed_findings
@@ -90,14 +88,17 @@ class SecretsHunter:
         transformed_findings: list[Finding] = []
 
         for finding in findings:
+            finding_value_rejected, rejected_by = (
+                self.false_positive_validator.check_rejection_for_finding_value(finding)
+            )
             match = finding.match
-            match_rejected, rejected_by = self.false_positive_validator.check_rejection_for_value(match)
             norm_match = match.strip().strip(STRIP)
             vars_ = ctx.get(match) or ctx.get(norm_match)
 
             if not vars_:
-                if match_rejected:
-                    finding = finding.reject(rejected_by + " in value")
+                if finding_value_rejected:
+                    finding = finding.reject(f"{rejected_by.name} {rejected_by.category} in value")
+
                 transformed_findings.append(finding)
                 continue
 
@@ -105,6 +106,13 @@ class SecretsHunter:
             # pick the best var for display / single field
             vars_ordered = sorted(vars_)
             best = next((v for v in vars_ordered if self.is_secret_var(v)[0]), vars_ordered[0])
+
+            kw_rejected, kw_rejected_by = self.false_positive_validator.check_rejection_for_keywords(vars_ordered)
+
+            if kw_rejected:
+                finding = finding.reject(kw_rejected_by + " in keyword/variable")
+                transformed_findings.append(finding)
+                continue
 
             reasoning = finding.confidence_reasoning
             severity = finding.severity
@@ -124,6 +132,14 @@ class SecretsHunter:
 
             is_secret, kw = self.is_secret_var(best)
 
+            if finding_value_rejected:
+                secret_hash = is_secret and rejected_by.category == "hash"
+
+                if not secret_hash:
+                    reasoning = f"{rejected_by.name} {rejected_by.category} in value"
+                    transformed_findings.append(finding.reject(reasoning))
+                    continue
+
             if is_secret:
                 if finding.detection_method == DetectionMethod.ENTROPY:
                     reasoning = f"High Entropy in context of secret key/variable assignment - {kw}"
@@ -139,16 +155,6 @@ class SecretsHunter:
 
                 transformed_findings.append(finding)
                 continue
-
-            if match_rejected:
-                finding = finding.reject(rejected_by + " in value")
-                transformed_findings.append(finding)
-                continue
-
-            kw_rejected, kw_rejected_by = self.false_positive_validator.check_rejection_for_keywords(vars_ordered)
-
-            if kw_rejected:
-                finding = finding.reject(kw_rejected_by + " in keyword/variable")
 
             transformed_findings.append(finding)
 
@@ -169,7 +175,7 @@ class SecretsHunter:
             if lines is None:
                 logger.error(f"Failed to read file: {filepath}")
             else:
-                for line_num, line in self.lines_reader.read(lines):
+                for line_num, line in self.lines_reader.read(lines, filepath):
                     line_findings = self.extract_findings_from_line(line_num, line, filepath)
                     findings.extend(line_findings)
                     last_line_number = line_num
