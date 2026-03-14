@@ -107,13 +107,6 @@ class SecretsHunter:
             vars_ordered = sorted(vars_)
             best = next((v for v in vars_ordered if self.is_secret_var(v)[0]), vars_ordered[0])
 
-            kw_rejected, kw_rejected_by = self.false_positive_validator.check_rejection_for_keywords(vars_ordered)
-
-            if kw_rejected:
-                finding = finding.reject(kw_rejected_by + " in keyword/variable")
-                transformed_findings.append(finding)
-                continue
-
             reasoning = finding.confidence_reasoning
             severity = finding.severity
             confidence = finding.confidence
@@ -129,6 +122,13 @@ class SecretsHunter:
                 confidence=confidence,
                 reasoning=reasoning
             )
+
+            kw_rejected, kw_rejected_by = self.false_positive_validator.check_rejection_for_keywords(vars_ordered)
+
+            if kw_rejected:
+                finding = finding.reject(kw_rejected_by + " in keyword/variable")
+                transformed_findings.append(finding)
+                continue
 
             is_secret, kw = self.is_secret_var(best)
 
