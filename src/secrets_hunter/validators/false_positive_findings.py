@@ -41,6 +41,9 @@ class FalsePositiveFindingsValidator:
             pattern = exclude_pattern.pattern
 
             if re.search(pattern, string_lower):
+                if pattern.pattern == "test" and "sk_test" in string_lower:
+                    continue
+
                 return True, exclude_pattern
 
         string_semantics_classification = self.string_classifier.classify(string)
@@ -51,9 +54,6 @@ class FalsePositiveFindingsValidator:
         return False, None
 
     def check_rejection_for_finding_value(self, finding: Finding) -> tuple[bool, ExcludePattern | None]:
-        if finding.detection_method == DetectionMethod.PATTERN:
-            return False, None
-
         match = finding.match
 
         if finding.source is StringSource.PEM_HEADER:
