@@ -84,7 +84,9 @@ class LineFragmenter:
             cleaned = chunk.strip(STRIP)
 
             # If it's key=value or key:value, keep only RHS (value) when it's long enough
+            is_assignment = False
             extracted_value = None
+
             for sep in ("=", ":"):
                 if sep in cleaned:
                     lhs, rhs = cleaned.split(sep, 1)
@@ -92,18 +94,21 @@ class LineFragmenter:
                     rhs = rhs.strip(STRIP).lstrip("=")
 
                     if self._identifier_re.match(lhs) and len(lhs) <= self.max_identifier_len:
+                        is_assignment = True
+
                         if len(rhs) >= self.min_token_length:
                             extracted_value = rhs
+
                         break
 
             if extracted_value:
                 fragments.append(LineFragment(extracted_value))
-            else:
-                if len(cleaned) >= self.min_token_length:
-                    fragments.append(LineFragment(cleaned))
+            elif not is_assignment and len(cleaned) >= self.min_token_length:
+                fragments.append(LineFragment(cleaned))
 
         seen = set()
         unique_strings = []
+
         for f in fragments:
             if f.text not in seen:
                 seen.add(f.text)
