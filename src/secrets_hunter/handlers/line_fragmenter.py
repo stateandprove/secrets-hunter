@@ -8,10 +8,12 @@ class LineFragmenter:
     """
     Extracts candidate secret fragments from a single source line.
     """
-    def __init__(self, assignment_patterns, min_token_length):
+
+    def __init__(self, assignment_patterns, min_token_length, entropy_detector):
         self.assignment_patterns = assignment_patterns
         self.min_token_length = min_token_length
         self.max_identifier_len = 40
+        self.entropy_detector = entropy_detector
 
         # snake_case, SCREAMING_SNAKE, camelCase
         self._identifier_re = re.compile(
@@ -58,6 +60,31 @@ class LineFragmenter:
 
         return line, fragments
 
+    def _looks_like_identifier(self, s: str) -> bool:
+        if not self._identifier_re.match(s):
+            return False
+
+        if len(s) > self.max_identifier_len:
+            return False
+
+        # high entropy - likely not an identifier but a token chunk
+        findings = self.entropy_detector.detect("", 0, "", [LineFragment(s)])
+
+        return len(findings) == 0
+
+    def _split_assignment(self, s: str) -> str | None:
+        """If it's key=value or key:value, keep only RHS (value) when it's long enough"""
+        for sep in ("=", ":"):
+            if sep in s:
+                lhs, rhs = s.split(sep, 1)
+                lhs = lhs.strip(STRIP).lstrip("-")
+                rhs = rhs.strip(STRIP).lstrip("=")
+
+                if self._looks_like_identifier(lhs):
+                    return rhs if len(rhs) >= self.min_token_length else ""
+
+        return None
+
     def extract(self, line: str) -> list[LineFragment]:
         fragments = []
 
@@ -73,7 +100,12 @@ class LineFragmenter:
             s = m.group(1) or m.group(2) or m.group(3)
 
             if s:
-                fragments.append(LineFragment(s))
+                result = self._split_assignment(s)
+
+                if result:
+                    fragments.append(LineFragment(result))
+                elif result is None:
+                    fragments.append(LineFragment(s))
 
             # remove whole quoted span to avoid extracting them twice
             start, end = m.span()
@@ -83,27 +115,11 @@ class LineFragmenter:
         for chunk in self._chunk_re.findall(line_wo_quotes):
             cleaned = chunk.strip(STRIP)
 
-            # If it's key=value or key:value, keep only RHS (value) when it's long enough
-            is_assignment = False
-            extracted_value = None
+            result = self._split_assignment(cleaned)
 
-            for sep in ("=", ":"):
-                if sep in cleaned:
-                    lhs, rhs = cleaned.split(sep, 1)
-                    lhs = lhs.strip(STRIP)
-                    rhs = rhs.strip(STRIP).lstrip("=")
-
-                    if self._identifier_re.match(lhs) and len(lhs) <= self.max_identifier_len:
-                        is_assignment = True
-
-                        if len(rhs) >= self.min_token_length:
-                            extracted_value = rhs
-
-                        break
-
-            if extracted_value:
-                fragments.append(LineFragment(extracted_value))
-            elif not is_assignment and len(cleaned) >= self.min_token_length:
+            if result:
+                fragments.append(LineFragment(result))
+            elif result is None and len(cleaned) >= self.min_token_length:
                 fragments.append(LineFragment(cleaned))
 
         seen = set()
