@@ -1,4 +1,5 @@
 import logging
+import time
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -275,12 +276,22 @@ class SecretsHunter:
             self.pattern_detector.set_base_path(target)
             self.entropy_detector.set_base_path(target)
 
+        start_time = time.monotonic()
+
         if target_path.is_file():
             findings, success = self.scan_file(target_path, show_progress=True)
         elif target_path.is_dir():
             findings, success = self.scan_directory(target)
         else:
             logger.error(f"'{target}' is not a valid file or directory")
+            return findings, success
+
+        elapsed = time.monotonic() - start_time
+        minutes =  int(elapsed // 60)
+        seconds = int(elapsed % 60)
+        milliseconds = int((elapsed % 1) * 1000)
+        duration = f"{minutes}m {seconds}s {milliseconds}ms" if minutes else f"{seconds}s {milliseconds}ms"
+        logger.info(f"Scan duration: {duration}")
 
         if success:
             if not self.cli_args.min_confidence:
