@@ -18,7 +18,9 @@ PEM_TYPES = [
     "OPENSSH PRIVATE KEY",
     "ENCRYPTED PRIVATE KEY",
     "CERTIFICATE REQUEST",
-    "CRL"
+    "CRL",
+    "PGP PUBLIC KEY BLOCK",
+    "PGP PRIVATE KEY BLOCK"
 ]
 
 pem_group = "|".join(PEM_TYPES)

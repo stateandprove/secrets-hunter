@@ -1,18 +1,12 @@
 import re
 
-from secrets_hunter.models import Finding, StringSource, DetectionMethod
+from secrets_hunter.models import Finding, StringSource
 from secrets_hunter.models.config import ExcludePattern
 
 # Special patterns
-PUBLIC_PEM_PATTERN = ExcludePattern(
-    name="Public", category="Key", pattern=re.compile("PUBLIC")
-)
-CERT_PATTERN = ExcludePattern(
-    name="Public", category="Certificate", pattern=re.compile("CERTIFICATE")
-)
-SEMANTICS_PATTERN = ExcludePattern(
-    name="Semantics -", category="string with English-like words", pattern=re.compile('')
-)
+PUBLIC_PEM = ExcludePattern(name="Public", category="Key", pattern=re.compile("PUBLIC"))
+CERT = ExcludePattern(name="Public", category="Certificate", pattern=re.compile("CERTIFICATE"))
+SEMANTICS = ExcludePattern(name="Semantics -", category="string with English-like words", pattern=re.compile(''))
 
 
 class FalsePositiveFindingsValidator:
@@ -23,10 +17,12 @@ class FalsePositiveFindingsValidator:
 
     @staticmethod
     def check_rejection_for_pem_header(pem_header: str) -> tuple[bool, ExcludePattern | None]:
-        if re.search(PUBLIC_PEM_PATTERN.pattern, pem_header):
-            return True, PUBLIC_PEM_PATTERN
-        if re.search(CERT_PATTERN.pattern, pem_header):
-            return True, CERT_PATTERN
+        if re.search(PUBLIC_PEM.pattern, pem_header):
+            return True, PUBLIC_PEM
+
+        if re.search(CERT.pattern, pem_header):
+            return True, CERT
+
         return False, None
 
     @staticmethod
@@ -49,7 +45,7 @@ class FalsePositiveFindingsValidator:
         string_semantics_classification = self.string_classifier.classify(string)
 
         if string_semantics_classification.structured:
-            return True, SEMANTICS_PATTERN
+            return True, SEMANTICS
 
         return False, None
 
