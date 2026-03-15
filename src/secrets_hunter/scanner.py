@@ -37,7 +37,8 @@ class SecretsHunter:
         )
         self.lines_fragmenter = LineFragmenter(
             assignment_patterns=self.runtime_cfg.assignment_patterns,
-            min_token_length=self.cli_args.min_string_length
+            min_token_length=self.cli_args.min_string_length,
+            entropy_detector=self.entropy_detector
         )
 
     def is_secret_var(self, v: str) -> tuple[bool, str]:
