@@ -12,11 +12,11 @@ class ExcludePattern:
 
 @dataclass(frozen=True)
 class RuntimeConfig:
-    secret_patterns: dict[str, re.Pattern]
-    exclude_patterns: list[ExcludePattern]
-    exclude_keywords: list[str]
-    secret_keywords: list[str]
+    secret_patterns:     dict[str, re.Pattern]
+    exclude_patterns:    list[ExcludePattern]
+    exclude_keywords:    list[str]
+    secret_keywords:     list[str]
     assignment_patterns: list[re.Pattern]
-    ignore_files: tuple[str, ...]
-    ignore_extensions: tuple[str, ...]
-    ignore_dirs: tuple[str, ...]
+    ignore_files:        tuple[str, ...]
+    ignore_extensions:   tuple[str, ...]
+    ignore_dirs:         tuple[str, ...]
