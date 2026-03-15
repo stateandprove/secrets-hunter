@@ -7,6 +7,9 @@ from secrets_hunter.models.config import ExcludePattern
 PUBLIC_PEM = ExcludePattern(name="Public", category="Key", pattern=re.compile("PUBLIC"))
 CERT = ExcludePattern(name="Public", category="Certificate", pattern=re.compile("CERTIFICATE"))
 SEMANTICS = ExcludePattern(name="Semantics -", category="string with English-like words", pattern=re.compile(''))
+DB_CONN_PLACEHOLDER = ExcludePattern(
+    name="db connection", category="placeholder", pattern=re.compile(r'%[a-zA-Z]|\{.*?}|\$\{.*?}')
+)
 
 
 class FalsePositiveFindingsValidator:
@@ -25,8 +28,26 @@ class FalsePositiveFindingsValidator:
 
         return False, None
 
-    @staticmethod
-    def check_rejection_for_db_conn_string(db_conn_string: str) -> tuple[bool, ExcludePattern | None]:
+    def check_rejection_for_db_conn_string(self, db_conn_string: str) -> tuple[bool, ExcludePattern | None]:
+        password_match = re.search(r'://[^:/@]+:([^@/\s]+)@', db_conn_string)
+
+        if not password_match:
+            return False, None
+
+        password = password_match.group(1)
+
+        if re.search(DB_CONN_PLACEHOLDER.pattern, password):
+            return True, DB_CONN_PLACEHOLDER
+
+        for ep in self.exclude_patterns:
+            if ep.category == "placeholder" and re.search(ep.pattern, password):
+                return True, ep
+
+        classification = self.string_classifier.classify(password)
+
+        if classification.structured:
+            return True, SEMANTICS
+
         return False, None
 
     def check_rejection_for_generic_string(self, finding: Finding) -> tuple[bool, ExcludePattern | None]:

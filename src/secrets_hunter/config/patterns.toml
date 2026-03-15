@@ -147,6 +147,11 @@ pattern = 'fake'
 
 [[exclude_patterns]]
 category = "placeholder"
+name = "password"
+pattern = 'password'
+
+[[exclude_patterns]]
+category = "placeholder"
 name = "mock"
 pattern = 'mock'
 
