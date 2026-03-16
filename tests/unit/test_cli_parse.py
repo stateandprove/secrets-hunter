@@ -86,10 +86,10 @@ class TestCLIParse(unittest.TestCase):
 
     # ---------------- help behavior ----------------
     def test_help_top_level_exits_0(self):
-        self.assertHelpExit0(["secrets-hunter", "--help"], expected_stdout_fragment="Available commands")
+        self.assertHelpExit0(["secrets-hunter", "--help"], expected_stdout_fragment="available commands")
 
     def test_help_top_level_short_exits_0(self):
-        self.assertHelpExit0(["secrets-hunter", "-h"], expected_stdout_fragment="Available commands")
+        self.assertHelpExit0(["secrets-hunter", "-h"], expected_stdout_fragment="available commands")
 
     def test_help_scan_exits_0(self):
         self.assertHelpExit0(["secrets-hunter", "scan", "--help"], expected_stdout_fragment="--min-confidence")

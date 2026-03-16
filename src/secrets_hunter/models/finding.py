@@ -1,13 +1,17 @@
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, replace, asdict
 from enum import Enum, IntEnum
+
+from .line_fragment import StringSource
+
+DISPLAY_EXCLUDED_FIELDS = {"source"}
 
 
 class Severity(str, Enum):
     CRITICAL = "CRITICAL"
-    HIGH = "HIGH"
-    MEDIUM = "MEDIUM"
-    LOW = "LOW"
-    INFO = "INFO"
+    HIGH     = "HIGH"
+    MEDIUM   = "MEDIUM"
+    LOW      = "LOW"
+    INFO     = "INFO"
 
     def __str__(self) -> str:
         return self.name
@@ -19,10 +23,10 @@ class DetectionMethod(str, Enum):
 
 
 class Confidence(IntEnum):
-    REJECTED = 0
+    REJECTED                           = 0
     HIGH_ENTROPY_NO_ASSIGNMENT_CONTEXT = 5
-    HIGH_ENTROPY_WITH_ASSIGNMENT = 75
-    VERIFIED = 100
+    HIGH_ENTROPY_WITH_ASSIGNMENT       = 75
+    VERIFIED                           = 100
 
 
 @dataclass(frozen=True)
@@ -37,12 +41,20 @@ class Finding:
     confidence_reasoning: str
     detection_method: DetectionMethod
     confidence: Confidence
+    source: StringSource = StringSource.GENERIC
     context_var: str | None = None
+
+    def to_display(self) -> dict[str, object]:
+        data = asdict(self)
+
+        for field in DISPLAY_EXCLUDED_FIELDS:
+            data.pop(field, None)
+
+        return data
 
     def reject(self, confidence_reasoning: str) -> 'Finding':
         return replace(
             self,
-            title=self.title,
             severity=Severity.INFO,
             confidence=Confidence.REJECTED,
             confidence_reasoning=confidence_reasoning

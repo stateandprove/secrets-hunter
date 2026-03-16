@@ -1,3 +1,5 @@
+import re
+
 from dataclasses import dataclass
 
 
@@ -6,6 +8,29 @@ B64_ENTROPY_MAX = 6.0
 MAX_WORKERS_MULTIPLIER = 2
 STRIP = '.,;:()[]{}<>"\'`'
 
+PEM_TYPES = [
+    "PRIVATE KEY",
+    "PUBLIC KEY",
+    "CERTIFICATE",
+    "RSA PRIVATE KEY",
+    "EC PRIVATE KEY",
+    "DSA PRIVATE KEY",
+    "OPENSSH PRIVATE KEY",
+    "ENCRYPTED PRIVATE KEY",
+    "CERTIFICATE REQUEST",
+    "CRL",
+    "PGP PUBLIC KEY BLOCK",
+    "PGP PRIVATE KEY BLOCK"
+]
+
+pem_group = "|".join(PEM_TYPES)
+
+PEM_BEGIN_RE = re.compile(rf'-----BEGIN ({pem_group})-----')
+PEM_END_RE   = re.compile(rf'-----END ({pem_group})-----')
+DB_URI_RE = re.compile(
+    r'(?:postgresql|postgres|mysql|mongodb(?:\+srv)?|redis|rediss|amqp|amqps|jdbc:[a-z]+)'
+    r'://[^:/@]+:[^@/\s]+@[^\s\'"`]+'
+)
 
 class FileSettings:
     MAX_LINE_LENGTH = 50000

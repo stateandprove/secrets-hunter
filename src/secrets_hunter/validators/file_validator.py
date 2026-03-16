@@ -2,6 +2,7 @@ from pathlib import Path
 
 from secrets_hunter.config.settings import FileSettings
 
+
 class FileValidator:
     def __init__(
         self,

@@ -1,15 +1,20 @@
 import logging
+import time
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-from secrets_hunter.config import CLIArgs, RuntimeConfig, STRIP
+from secrets_hunter.config import CLIArgs, STRIP
 from secrets_hunter.detectors.entropy_detector import EntropyDetector
 from secrets_hunter.detectors.pattern_detector import PatternDetector
 from secrets_hunter.validators import FalsePositiveFindingsValidator
-from secrets_hunter.handlers import FileHandler, StringsExtractor, FindingsProcessor
 from secrets_hunter.handlers.progress_bar import FileProgressBar, FolderProgressBar
+from secrets_hunter.semantics import StringSemanticsClassifier
 from secrets_hunter.models import Finding, Severity, DetectionMethod, Confidence
+from secrets_hunter.models.config import RuntimeConfig
+from secrets_hunter.handlers import (
+    FileHandler, LineFragmenter, FindingsProcessor, PEMAwareLinesReader
+)
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +25,7 @@ class SecretsHunter:
         self.runtime_cfg = runtime_cfg
         self.pattern_detector = PatternDetector(self.runtime_cfg.secret_patterns)
         self.entropy_detector = EntropyDetector(self.cli_args)
+        self.lines_reader = PEMAwareLinesReader()
         self.file_handler = FileHandler(
             set(self.runtime_cfg.ignore_files),
             set(self.runtime_cfg.ignore_extensions),
@@ -27,11 +33,13 @@ class SecretsHunter:
         )
         self.false_positive_validator = FalsePositiveFindingsValidator(
             exclude_patterns=self.runtime_cfg.exclude_patterns,
-            exclude_keywords=self.runtime_cfg.exclude_keywords
+            exclude_keywords=self.runtime_cfg.exclude_keywords,
+            string_semantics_classifier=StringSemanticsClassifier()
         )
-        self.strings_extractor = StringsExtractor(
+        self.lines_fragmenter = LineFragmenter(
             assignment_patterns=self.runtime_cfg.assignment_patterns,
-            min_token_length=self.cli_args.min_string_length
+            min_token_length=self.cli_args.min_string_length,
+            entropy_detector=self.entropy_detector
         )
 
     def is_secret_var(self, v: str) -> tuple[bool, str]:
@@ -45,19 +53,19 @@ class SecretsHunter:
 
     def extract_findings_from_line(self, line_num: int, line: str, filepath: Path) -> list[Finding]:
         # Step 1: Extract all strings from a line
-        all_strings = self.strings_extractor.extract(line)
+        all_fragments = self.lines_fragmenter.extract(line)
 
-        if not all_strings:
+        if not all_fragments:
             return []
 
         # Step 2: Find high entropy strings
         entropy_findings = self.entropy_detector.detect(
-            line, line_num, str(filepath), all_strings
+            line, line_num, str(filepath), all_fragments
         )
 
         # Step 3: Find pattern matching strings
         pattern_findings = self.pattern_detector.detect(
-            line, line_num, str(filepath), all_strings
+            line, line_num, str(filepath), all_fragments
         )
 
         # Step 3.5: prioritize pattern findings (dedupe by match)
@@ -73,7 +81,7 @@ class SecretsHunter:
             return []
 
         # Step 4: Check and process the assignment context
-        assignment_context = self.strings_extractor.assignment_map(line)
+        assignment_context = self.lines_fragmenter.assignment_map(line)
         transformed_findings = self._process_assignment_context(all_line_findings, assignment_context)
 
         return transformed_findings
@@ -82,18 +90,17 @@ class SecretsHunter:
         transformed_findings: list[Finding] = []
 
         for finding in findings:
+            finding_value_rejected, rejected_by = (
+                self.false_positive_validator.check_rejection_for_finding_value(finding)
+            )
             match = finding.match
-
-            if not match:
-                continue
-
-            match_rejected, rejected_by = self.false_positive_validator.check_rejection_for_value(match)
             norm_match = match.strip().strip(STRIP)
             vars_ = ctx.get(match) or ctx.get(norm_match)
 
             if not vars_:
-                if match_rejected:
-                    finding = finding.reject(rejected_by + " in value")
+                if finding_value_rejected:
+                    finding = finding.reject(f"{rejected_by.name} {rejected_by.category} in value")
+
                 transformed_findings.append(finding)
                 continue
 
@@ -118,7 +125,22 @@ class SecretsHunter:
                 reasoning=reasoning
             )
 
+            kw_rejected, kw_rejected_by = self.false_positive_validator.check_rejection_for_keywords(vars_ordered)
+
+            if kw_rejected:
+                finding = finding.reject(kw_rejected_by + " in keyword/variable")
+                transformed_findings.append(finding)
+                continue
+
             is_secret, kw = self.is_secret_var(best)
+
+            if finding_value_rejected:
+                secret_hash = is_secret and rejected_by.category == "hash"
+
+                if not secret_hash:
+                    reasoning = f"{rejected_by.name} {rejected_by.category} in value"
+                    transformed_findings.append(finding.reject(reasoning))
+                    continue
 
             if is_secret:
                 if finding.detection_method == DetectionMethod.ENTROPY:
@@ -135,16 +157,6 @@ class SecretsHunter:
 
                 transformed_findings.append(finding)
                 continue
-
-            if match_rejected:
-                finding = finding.reject(rejected_by + " in value")
-                transformed_findings.append(finding)
-                continue
-
-            kw_rejected, kw_rejected_by = self.false_positive_validator.check_rejection_for_keywords(vars_ordered)
-
-            if kw_rejected:
-                finding = finding.reject(kw_rejected_by + " in keyword/variable")
 
             transformed_findings.append(finding)
 
@@ -165,7 +177,7 @@ class SecretsHunter:
             if lines is None:
                 logger.error(f"Failed to read file: {filepath}")
             else:
-                for line_num, line in enumerate(lines, 1):
+                for line_num, line in self.lines_reader.read(lines, filepath):
                     line_findings = self.extract_findings_from_line(line_num, line, filepath)
                     findings.extend(line_findings)
                     last_line_number = line_num
@@ -264,12 +276,22 @@ class SecretsHunter:
             self.pattern_detector.set_base_path(target)
             self.entropy_detector.set_base_path(target)
 
+        start_time = time.monotonic()
+
         if target_path.is_file():
             findings, success = self.scan_file(target_path, show_progress=True)
         elif target_path.is_dir():
             findings, success = self.scan_directory(target)
         else:
             logger.error(f"'{target}' is not a valid file or directory")
+            return findings, success
+
+        elapsed = time.monotonic() - start_time
+        minutes =  int(elapsed // 60)
+        seconds = int(elapsed % 60)
+        milliseconds = int((elapsed % 1) * 1000)
+        duration = f"{minutes}m {seconds}s {milliseconds}ms" if minutes else f"{seconds}s {milliseconds}ms"
+        logger.info(f"Scan duration: {duration}")
 
         if success:
             if not self.cli_args.min_confidence:

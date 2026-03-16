@@ -35,59 +35,59 @@ scan_args = {
     "target": {
         "nargs": "?",
         "default": ".",
-        "help": "File or directory to scan (default: current directory)",
+        "help": "file or directory to scan (default: current directory)",
     },
     "--reveal-findings": {
         "action": "store_true",
         "default": CLIDefaults.REVEAL_FINDINGS,
-        "help": f"Reveal findings in output (default: {CLIDefaults.REVEAL_FINDINGS})"
+        "help": f"reveal findings in output (default: {CLIDefaults.REVEAL_FINDINGS})"
     },
     "--config": {
         "action": "append",
         "default": None,
         "metavar": "FILE",
-        "help": "Path to TOML overlay config. Can be used multiple times."
+        "help": "path to TOML overlay config. Can be used multiple times."
     },
     "--json": {
         "dest": "json_output",
         "metavar": "FILE",
-        "help": "Export results to JSON file"
+        "help": "export results to JSON file"
     },
     "--sarif": {
         "dest": "sarif_output",
         "metavar": "FILE",
-        "help": "Export results to SARIF file"
+        "help": "export results to SARIF file"
     },
     "--hex-entropy": {
         "type": float,
         "default": CLIDefaults.HEX_ENTROPY_THRESHOLD,
-        "help": f"Hex entropy threshold (default: {CLIDefaults.HEX_ENTROPY_THRESHOLD})"
+        "help": f"hex entropy threshold (default: {CLIDefaults.HEX_ENTROPY_THRESHOLD})"
     },
     "--b64-entropy": {
         "type": float,
         "default": CLIDefaults.B64_ENTROPY_THRESHOLD,
-        "help": f"Base64 entropy threshold (default: {CLIDefaults.B64_ENTROPY_THRESHOLD})"
+        "help": f"base64 entropy threshold (default: {CLIDefaults.B64_ENTROPY_THRESHOLD})"
     },
     "--min-length": {
         "type": int,
         "default": CLIDefaults.MIN_STRING_LENGTH,
-        "help": f"Minimum string length (default: {CLIDefaults.MIN_STRING_LENGTH})"
+        "help": f"minimum string length (default: {CLIDefaults.MIN_STRING_LENGTH})"
     },
     "--workers": {
         "type": int,
         "default": CLIDefaults.MAX_WORKERS,
-        "help": f"Number of parallel workers (default: {CLIDefaults.MAX_WORKERS})"
+        "help": f"number of parallel workers (default: {CLIDefaults.MAX_WORKERS})"
     },
     "--log-level": {
         "type": str,
         "choices": ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
         "default": CLIDefaults.LOG_LEVEL,
-        "help": f"Log level (default: {CLIDefaults.LOG_LEVEL})"
+        "help": f"log level (default: {CLIDefaults.LOG_LEVEL})"
     },
     "--min-confidence": {
         "type": int,
         "default": CLIDefaults.MIN_CONFIDENCE,
-        "help": f"Minimum confidence of findings to display (default: {CLIDefaults.MIN_CONFIDENCE})"
+        "help": f"minimum confidence of findings to display (default: {CLIDefaults.MIN_CONFIDENCE})"
     }
 }
 
@@ -95,7 +95,7 @@ showconfig_args = {
     "--config": scan_args["--config"],
     "sections": {
         "nargs": "*",
-        "help": "Specific sections to display. Shows all if omitted.",
+        "help": "specific sections to display; shows all if omitted.",
         "choices": [
             'secret_patterns',
             'exclude_patterns',
@@ -128,6 +128,11 @@ class CLI:
             description="Detect secrets and sensitive information in your codebase",
             formatter_class=argparse.RawDescriptionHelpFormatter
         )
+        self.parser.add_argument(
+            '--version',
+            action='version',
+            version=f'%(prog)s v{__version__}'
+        )
         self.add_args()
 
     @staticmethod
@@ -136,21 +141,21 @@ class CLI:
             parser.add_argument(arg_name, **kwargs)
 
     def add_args(self):
-        subparsers = self.parser.add_subparsers(dest='command', help='Available commands')
+        subparsers = self.parser.add_subparsers(dest='command', help='available commands')
         scan_parser = subparsers.add_parser(
             'scan',
-            help='Scan files for secrets (default command)',
+            help='scan files for secrets (default command)',
             formatter_class=argparse.RawDescriptionHelpFormatter
         )
         self.fill_args(scan_parser, scan_args)
         showconfig_parser = subparsers.add_parser(
             'showconfig',
-            help='Display the current runtime configuration'
+            help='display the current runtime configuration'
         )
         self.fill_args(showconfig_parser, showconfig_args)
 
     def parse(self):
-        known_args = ['scan', 'showconfig', '-h', '--help']
+        known_args = ['scan', 'showconfig', '-h', '--help', '--version']
 
         # If no args or first arg isn't a subcommand, inject 'scan'
         if len(sys.argv) == 1 or (len(sys.argv) > 1 and sys.argv[1] not in known_args):
@@ -168,10 +173,10 @@ class CLI:
 
 
 def main():
-    import random
-
-    logo = logo_ascii_filled if random.random() < 0.05 else logo_ascii_hollow
-    display_logo_with_version(logo, __version__)
+    if '--version' not in sys.argv:
+        import random
+        logo = logo_ascii_filled if random.random() < 0.05 else logo_ascii_hollow
+        display_logo_with_version(logo, __version__)
 
     cli = CLI()
     args = cli.parse()
