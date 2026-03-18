@@ -14,18 +14,22 @@ secrets-hunter . --config team-overrides.toml
 Overlays are applied **in the order provided**. Overlays don't replace the entire configuration, but merge on top of existing settings instead.
 
 ## Table of Contents
+
 - [Viewing Current Configuration](#viewing-current-configuration)
 - [Full Schema](#full-schema)
-  - [Secret patterns](#secret-patterns)
-  - [Exclude patterns](#exclude-patterns)
-  - [Secret keywords](#secret-keywords)
-  - [Exclude keywords](#exclude-keywords)
-  - [Assignment patterns](#assignment-patterns)
-  - [Ignore rules](#ignore-rules)
+  - [Pattern Table](#pattern-table)
+  - [Secret Patterns](#secret-patterns)
+  - [Exclude Patterns](#exclude-patterns)
+  - [Secret Keywords](#secret-keywords)
+  - [Exclude Keywords](#exclude-keywords)
+  - [Assignment Patterns](#assignment-patterns)
+  - [Ignore Rules](#ignore-rules)
 - [Overlays](#overlays)
-- [Removal keys](#removal-keys)
-- [Practical examples](#practical-examples)
-- [Keep things clean](#keep-things-clean)
+  - [Arrays of Tables](#arrays-of-tables)
+  - [Lists of Strings](#lists-of-strings)
+  - [Removals](#removals)
+- [Practical Examples](#practical-examples)
+- [Keep Things Clean](#keep-things-clean)
 
 ---
 
@@ -57,37 +61,54 @@ secrets-hunter showconfig secret_patterns --config team-overrides.toml
 ```
 
 ## Full schema
+### Pattern table
+
+A reusable schema for defining regex-based patterns.
+
+**Fields:**
+- `name` — non-empty string
+- `pattern` — non-empty string, compiled as a regular expression
+- `flags` *(optional)* — list of strings, each one of:
+  - `IGNORECASE`
+  - `MULTILINE`
+  - `DOTALL`
+  - `VERBOSE`
+  - `ASCII`
 
 ### Secret patterns
-
+Patterns for secrets detection.
 ```toml
 [[secret_patterns]]
 name = "GitHub Token"
 pattern = '''\bgh[pousr]_[A-Za-z0-9]{36,}\b'''
-# Optional (list of strings):
+# Optional:
 # flags = ["IGNORECASE", "MULTILINE", "DOTALL", "VERBOSE", "ASCII"]
 ```
 
 Notes:
-- `name` must be a **non-empty string**
-- `pattern` must be a **non-empty string**
-- `flags` (if present) must be a **list of strings**, each one of:
-  - `IGNORECASE`, `MULTILINE`, `DOTALL`, `VERBOSE`, `ASCII`
+- Uses the [Pattern table](#pattern-table)
 
 ### Exclude patterns
 Findings matching these patterns will be rejected.
 
 ```toml
-exclude_patterns = [
-  '''^[0-9a-f]{32}$''',  # MD5 hashes
-  "example",
-  "dummy"
-]
+[[exclude_patterns]]
+name = "MD5"
+category = "hash"
+pattern = '''\b[0-9a-f]{32}\b'''
+
+[[exclude_patterns]]
+name = "dummy"
+category = "placeholder"
+pattern = 'dummy'
+# Optional:
+# flags = ["IGNORECASE"]
 ```
 
-Each entry is compiled as a regex. A value like `"dummy"` is treated as the pattern `dummy`, so it can match as a substring. If you need an exact match, anchor it with `^...$` (for example: `^dummy$`).
-
-Deduplication and removals work by **exact string match** of the TOML entry.
+Notes:
+- Uses the [Pattern table](#pattern-table)
+- Additional field:
+  - `category` — used for reporting and grouping
 
 ### Secret keywords
 Used to boost confidence when a match is associated with a variable name suggesting a secret.
@@ -120,6 +141,7 @@ assignment_patterns = [
   '''export\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*[:=]\s*["']([^"']+)["']''',
 ]
 ```
+`assignment_patterns` should be a list of regex patterns.
 
 ### Ignore rules
 Ignore rules live under the `[ignore]` table:
@@ -135,21 +157,25 @@ dirs = ["node_modules", ".git", "dist", "build"]
 
 ## Overlays
 
-### `secret_patterns` (by name)
-`[[secret_patterns]]` entries are merged **by `name`**:
+### Arrays of tables
 
-- If an overlay defines a pattern with an existing `name`, it **replaces** the previous pattern (and flags).
+Tables in the array are merged by `name` during overlay processing:
+
+- If an overlay defines a pattern with an existing `name`, it **replaces** the previous pattern.
 - If it uses a new `name`, it **adds** a new pattern.
-- You can remove existing patterns using `remove_secret_patterns`.
+- You can remove existing patterns using `remove_*` key.
 
-### Lists
-These keys are treated as lists and are:
+Applies to:
+- `secret_patterns`
+- `exclude_patterns`
+
+### Lists of strings
+These keys are treated as lists of strings and are:
 
 1. **extended** (appended) from each file in load order
 2. **deduplicated** (first occurrence kept)
 
 Applies to:
-- `exclude_patterns`
 - `secret_keywords`
 - `exclude_keywords`
 - `assignment_patterns`
@@ -173,20 +199,17 @@ Supported removal keys:
 - `remove_ignore_extensions`
 - `remove_ignore_dirs`
 
----
+Remove patterns by name:
 
-## Removal keys
-
-### Remove secret patterns by name
 ```toml
 remove_secret_patterns = ["Private Key", "JWT Token"]
+remove_exclude_patterns = ["MD5", "dummy"]
 ```
 
-### Remove exclude patterns / keywords / assignment patterns
+Remove exclude patterns / keywords / assignment patterns.
 These remove by **exact string match**:
 
 ```toml
-remove_exclude_patterns = ["dummy", "example"]
 remove_secret_keywords = ["key"]
 remove_exclude_keywords = ["hash"]
 remove_assignment_patterns = [
@@ -194,7 +217,8 @@ remove_assignment_patterns = [
 ]
 ```
 
-### Remove ignore items
+Remove ignore items:
+
 ```toml
 remove_ignore_files = ["package-lock.json"]
 remove_ignore_extensions = [".pdf", ".svg"]
@@ -249,19 +273,19 @@ secrets-hunter . --config remove_private_keys.toml
 ### 4) Team baseline overlay
 **team.toml**
 ```toml
-# 1) Reduce noise
-exclude_patterns = [
-  # common placeholders
-  "example",
-  "placeholder",
-  "dummy",
-  "fake",
-  "mock",
-  # your internal non-secret format
-  '''\bACME_BUILD_ID_[0-9]{8}\b''',
-]
+# 1) Add/override exclusion patterns
+[[exclude_patterns]]
+name = "dummy"
+category = "placeholder"
+pattern = 'dummy'
 
-# 2) Add/override patterns (merged by name)
+# your internal non-secret format
+[[exclude_patterns]]
+name = "ACME build ID"
+category = "internal"
+pattern = '''\bACME_BUILD_ID_[0-9]{8}\b'''
+
+# 2) Add/override secret patterns
 [[secret_patterns]]
 name = "My Service Token"
 pattern = '''\bmytok_[A-Za-z0-9]{32,}\b'''
@@ -290,10 +314,15 @@ secrets-hunter . --config team.toml
 
 **ci.toml**
 ```toml
-exclude_patterns = [
-  "example",
-  "test"
-]
+[[exclude_patterns]]
+name = "example"
+category = "placeholder"
+pattern = 'example'
+
+[[exclude_patterns]]
+name = "test"
+category = "placeholder"
+pattern = 'test'
 ```
 
 **local.toml**
