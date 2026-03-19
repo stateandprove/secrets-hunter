@@ -182,7 +182,7 @@ pattern = 'abcde'
 
 [[exclude_patterns]]
 category = "placeholder"
-name = "repeating characters"
+name = "5+ repeating characters"
 pattern = '''(.)\1{4,}'''
 
 # Hashes
