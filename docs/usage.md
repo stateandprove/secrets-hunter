@@ -66,9 +66,9 @@ Found 4 potential secrets:
     Match:      ***MASKED***
     Context:    ***MASKED***
 ----------------------------------------------------------------------------------------
-[4] Hardcoded file checksum at app.py:10
-    Severity:   INFO (confidence: 0%, reasoning: \b[0-9a-f]{40}\b in value)
-    Variable:   file_checksum
+[4] Hardcoded build id at app.py:10
+    Severity:   INFO (confidence: 0%, reasoning: SHA1 hash in value)
+    Variable:   build_id
     Match:      ***MASKED***
     Context:    ***MASKED***
 ----------------------------------------------------------------------------------------
@@ -111,11 +111,11 @@ Found 4 potential secrets:
     Match:      xxxxxxxxxxxxx/xxxxxxx/xxxxxxxxxxxxxxxxxx
     Context:    AWS_SECRET_ACCESS_KEY = "xxxxxxxxxxxxx/xxxxxxx/xxxxxxxxxxxxxxxxxx"
 ----------------------------------------------------------------------------------------
-[4] Hardcoded file checksum at app.py:10
-    Severity:   INFO (confidence: 0%, reasoning: \b[0-9a-f]{40}\b in value)
-    Variable:   file_checksum
+[4] Hardcoded build id at app.py:10
+    Severity:   INFO (confidence: 0%, reasoning: SHA1 hash in value)
+    Variable:   build_id
     Match:      xxxxxxxx
-    Context:    FILE_CHECKSUM = "xxxxxxxx"
+    Context:    BUILD_ID = "xxxxxxxx"
 ----------------------------------------------------------------------------------------
 ```
 
@@ -169,17 +169,17 @@ Example output:
         "context_var": "aws_secret_access_key"
     },
     {
-        "title": "Hardcoded file checksum at app.py:10",
+        "title": "Hardcoded build id at app.py:10",
         "file": "app.py",
         "line": 10,
         "type": "High Entropy Hex String",
         "match": "***MASKED***",
         "context": "***MASKED***",
         "severity": "INFO",
-        "confidence_reasoning": "\\b[0-9a-f]{40}\\b in value",
+        "confidence_reasoning": "SHA1 hash in value",
         "detection_method": "entropy",
         "confidence": 0,
-        "context_var": "file_checksum"
+        "context_var": "build_id"
     }
 ]
 ```
