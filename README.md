@@ -83,6 +83,8 @@ A full description and usage examples are available in [Configuration docs](http
 
 Secrets Hunter is released under the MIT License, meaning you are free to use, modify, and distribute it for both personal and commercial purposes.
 
-## Acknowledgment
+## Acknowledgments
 
 This project was made possible by [whitespots.io](https://whitespots.io).
+
+Special thanks to [@Shandriuk](https://github.com/Shandriuk) for implementing the end-to-end functional testing suite.

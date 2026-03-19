@@ -1,11 +1,11 @@
 from .findings_processor import FindingsProcessor
-from .strings_extractor import StringsExtractor
+from .line_fragmenter import LineFragmenter
 from .file_handler import FileHandler
 from .lines_reader import PEMAwareLinesReader
 
 __all__ = [
     "FindingsProcessor",
-    "StringsExtractor",
+    "LineFragmenter",
     "FileHandler",
     "PEMAwareLinesReader"
 ]

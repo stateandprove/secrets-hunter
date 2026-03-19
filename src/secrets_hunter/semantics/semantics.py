@@ -3,10 +3,10 @@ import re
 from .bigrams import BIGRAM_MODEL
 from .corpus import CORPUS
 
-from secrets_hunter.models import StringClassification, StringKind
+from secrets_hunter.models import StringSemanticsClassification, StringKind
 
 
-class StringClassifier:
+class StringSemanticsClassifier:
     """
     Classifies a string as structured or random using two signals:
 
@@ -45,7 +45,7 @@ class StringClassifier:
 
     @staticmethod
     def word_match_ratio(s: str) -> float:
-        tokens = StringClassifier.split_tokens(s)
+        tokens = StringSemanticsClassifier.split_tokens(s)
 
         if not tokens:
             return 0.0
@@ -65,12 +65,12 @@ class StringClassifier:
 
         return max(0.0, min(1.0, score))
 
-    def classify(self, s: str) -> StringClassification:
+    def classify(self, s: str) -> StringSemanticsClassification:
         wmr = self.word_match_ratio(s)
         bgs = self.bigram_score(s)
         combined = self.word_weight * wmr + self.bigram_weight * bgs
 
-        return StringClassification(
+        return StringSemanticsClassification(
             string=s,
             tokens=self.split_tokens(s),
             word_match_ratio=round(wmr, 3),

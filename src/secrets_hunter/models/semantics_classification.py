@@ -8,7 +8,7 @@ class StringKind(Enum):
 
 
 @dataclass(frozen=True)
-class StringClassification:
+class StringSemanticsClassification:
     string: str
     tokens: list[str]
     word_match_ratio: float

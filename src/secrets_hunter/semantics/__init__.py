@@ -1,3 +1,3 @@
-from .semantics import StringClassifier
+from .semantics import StringSemanticsClassifier
 
-__all__ = ["StringClassifier"]
+__all__ = ["StringSemanticsClassifier"]
