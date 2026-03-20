@@ -25,6 +25,10 @@ def normalize_list_entries(items):
     return out
 
 
+def get_exclude_pattern_names(cfg):
+    return [ep.name for ep in cfg.exclude_patterns]
+
+
 class TestConfigOverlays(unittest.TestCase):
     def test_secret_patterns_add_new(self):
         with TemporaryDirectory() as td:
@@ -180,73 +184,75 @@ class TestConfigOverlays(unittest.TestCase):
             self.assertIn("ut_sec_b", kws)
 
     # ---- exclude_patterns ----
-    def test_exclude_patterns_append_dedupe_first_wins(self):
+    def test_exclude_patterns_add_new(self):
         with TemporaryDirectory() as td:
             td = Path(td)
-
             a = _write(td, "a.toml", r"""
-            exclude_patterns = [
-              "ut_dummy",
-              '''^ut_exact$'''
-            ]
+            [[exclude_patterns]]
+            name = "UT Dummy"
+            category = "placeholder"
+            pattern = 'ut_dummy'
             """)
             b = _write(td, "b.toml", r"""
-            exclude_patterns = [
-              "ut_dummy",         # duplicate
-              '''^ut_exact$''',    # duplicate
-              "ut_new"
-            ]
+            [[exclude_patterns]]
+            name = "UT New"
+            category = "placeholder"
+            pattern = 'ut_new'
             """)
-
             cfg = load_runtime_config([a, b])
-            pats = normalize_list_entries(cfg.exclude_patterns)
+            names = get_exclude_pattern_names(cfg)
+            self.assertIn("UT Dummy", names)
+            self.assertIn("UT New", names)
 
-            self.assertEqual(pats.count("ut_dummy"), 1)
-            self.assertEqual(pats.count(r"^ut_exact$"), 1)
-            self.assertIn("ut_new", pats)
-
-            # order: first occurrences kept
-            self.assertLess(pats.index("ut_dummy"), pats.index("ut_new"))
-
-    def test_remove_exclude_patterns_exact_string_match(self):
+    def test_exclude_patterns_override_replaces_by_name(self):
         with TemporaryDirectory() as td:
             td = Path(td)
-
             a = _write(td, "a.toml", r"""
-            exclude_patterns = [
-              "ut_dummy",
-              '''^ut_exact$'''
-            ]
+            [[exclude_patterns]]
+            name = "UT Override Me"
+            category = "placeholder"
+            pattern = 'ut_old'
             """)
             b = _write(td, "b.toml", r"""
-            remove_exclude_patterns = ["ut_dummy"]
+            [[exclude_patterns]]
+            name = "UT Override Me"
+            category = "placeholder"
+            pattern = 'ut_new'
             """)
-
             cfg = load_runtime_config([a, b])
-            pats = normalize_list_entries(cfg.exclude_patterns)
+            ep = next(ep for ep in cfg.exclude_patterns if ep.name == "UT Override Me")
+            self.assertEqual(ep.pattern.pattern, "ut_new")
 
-            self.assertNotIn("ut_dummy", pats)
-            self.assertIn(r"^ut_exact$", pats)
-
-    def test_remove_exclude_patterns_does_not_remove_similar(self):
+    def test_remove_exclude_patterns_by_name(self):
         with TemporaryDirectory() as td:
             td = Path(td)
-
             a = _write(td, "a.toml", r"""
-            exclude_patterns = [
-              "ut_dummy",
-              '''^ut_dummy$'''
-            ]
+            [[exclude_patterns]]
+            name = "UT Remove Me"
+            category = "placeholder"
+            pattern = 'ut_rm'
+
+            [[exclude_patterns]]
+            name = "UT Stay"
+            category = "placeholder"
+            pattern = 'ut_stay'
             """)
             b = _write(td, "b.toml", r"""
-            remove_exclude_patterns = ["ut_dummy"]
+            remove_exclude_patterns = ["UT Remove Me"]
             """)
-
             cfg = load_runtime_config([a, b])
-            pats = normalize_list_entries(cfg.exclude_patterns)
+            names = get_exclude_pattern_names(cfg)
+            self.assertNotIn("UT Remove Me", names)
+            self.assertIn("UT Stay", names)
 
-            self.assertNotIn("ut_dummy", pats)
-            self.assertIn(r"^ut_dummy$", pats)
+    def test_remove_exclude_patterns_nonexistent_is_noop(self):
+        with TemporaryDirectory() as td:
+            td = Path(td)
+            rm = _write(td, "rm.toml", r"""
+            remove_exclude_patterns = ["UT Does Not Exist"]
+            """)
+            cfg = load_runtime_config([rm])
+            self.assertIsNotNone(cfg)
 
     # ---- assignment_patterns ----
     def test_assignment_patterns_add_dedupe_remove(self):

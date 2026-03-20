@@ -182,7 +182,7 @@ pattern = 'abcde'
 
 [[exclude_patterns]]
 category = "placeholder"
-name = "repeating characters"
+name = "5+ repeating characters"
 pattern = '''(.)\1{4,}'''
 
 # Hashes
@@ -226,26 +226,6 @@ pattern = '''\b[0-9a-f]{56}\b'''
 category = "hash"
 name = "SHA384"
 pattern = '''\b[0-9a-f]{96}\b'''
-
-[[exclude_patterns]]
-category = "hash"
-name = "Scrypt"
-pattern = '''\$s0\$[a-f0-9]+\$[A-Za-z0-9+/]+\$[A-Za-z0-9+/]+'''
-
-[[exclude_patterns]]
-category = "hash"
-name = "Bcrypt"
-pattern = '''\$2[ayb]\$.{56}'''
-
-[[exclude_patterns]]
-category = "hash"
-name = "Argon2"
-pattern = '''\$argon2(i|d|id)\$'''
-
-[[exclude_patterns]]
-category = "hash"
-name = "PBKDF2"
-pattern = '''\b[0-9]+:[0-9a-f]+:[0-9a-f]+\b'''
 
 # AI
 
