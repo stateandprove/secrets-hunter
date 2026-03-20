@@ -189,16 +189,6 @@ pattern = '''(.)\1{4,}'''
 
 [[exclude_patterns]]
 category = "hash"
-name = "Base64 encoded MD5"
-pattern = '''(?<![A-Za-z0-9+/])[A-Za-z0-9+/]{27}=(?![A-Za-z0-9+/=])'''
-
-[[exclude_patterns]]
-category = "hash"
-name = "Base64 encoded SHA256"
-pattern = '''(?<![A-Za-z0-9+/])[A-Za-z0-9+/]{43}=(?![A-Za-z0-9+/=])'''
-
-[[exclude_patterns]]
-category = "hash"
 name = "MD5"
 pattern = '''\b[0-9a-f]{32}\b'''
 
