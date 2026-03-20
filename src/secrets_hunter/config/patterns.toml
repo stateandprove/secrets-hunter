@@ -235,6 +235,17 @@ name = "Qwen"
 pattern = 'qwen'
 
 [[exclude_patterns]]
+category = "model name"
+name = "Mistral"
+pattern = 'mistral'
+
+[[exclude_patterns]]
+category = "model name"
+name = "Hugging Face"
+pattern = 'huggingface'
+flags = ['IGNORECASE']
+
+[[exclude_patterns]]
 category = "call"
 name = "OpenAI tool"
 pattern = '''\bcall_[a-z0-9]{20,}\b'''
