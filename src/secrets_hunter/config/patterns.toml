@@ -241,6 +241,11 @@ pattern = 'mistral'
 
 [[exclude_patterns]]
 category = "model name"
+name = "Ministral"
+pattern = 'ministral'
+
+[[exclude_patterns]]
+category = "model name"
 name = "Hugging Face"
 pattern = 'huggingface'
 flags = ['IGNORECASE']
