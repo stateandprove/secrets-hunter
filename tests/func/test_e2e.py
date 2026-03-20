@@ -12,7 +12,8 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 # Test data configuration
 secrets = str(SCRIPT_DIR / "secrets.txt")
 mid_secrets = str(SCRIPT_DIR / "mid_secrets.txt")
-zero_secrets = str(SCRIPT_DIR / "zero_secrets.txt")
+no_assignment_secrets = str(SCRIPT_DIR / "no_assignment_secrets.txt")
+rejected_secrets = str(SCRIPT_DIR / "rejected_secrets.txt")
 
 # Module and report paths
 MODULE = "secrets_hunter.cli"
@@ -235,7 +236,11 @@ class TestE2E(unittest.TestCase):
         self.check_sarif(mid_secrets, Confidence.HIGH_ENTROPY_WITH_ASSIGNMENT)
 
     def test_json_no_assignment_confidence(self):
-        self.check_json(zero_secrets, [Confidence.HIGH_ENTROPY_NO_ASSIGNMENT_CONTEXT, Confidence.REJECTED])
+        self.check_json(no_assignment_secrets, Confidence.HIGH_ENTROPY_NO_ASSIGNMENT_CONTEXT)
+
+    def test_sarif_rejected_confidence(self):
+        self.check_sarif(rejected_secrets, Confidence.REJECTED)
+
 
 
 if __name__ == '__main__':
