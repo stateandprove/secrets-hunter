@@ -281,3 +281,8 @@ pattern = 'blob'
 category = "(misc)"
 name = "webpack"
 pattern = 'webpack'
+
+[[exclude_patterns]]
+category = "ID"
+name = "Stripe price"
+pattern = '\bprice_[A-Za-z0-9]{24}\b'
