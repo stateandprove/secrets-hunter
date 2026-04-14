@@ -19,7 +19,9 @@ exclude_keywords = [
     'placeholder',
     'template',
     'timestamp',
-    'created'
+    'created',
+    'revision',
+    'revises'
 ]
 
 # Keywords that suggest secrets
