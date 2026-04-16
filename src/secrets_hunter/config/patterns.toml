@@ -79,8 +79,8 @@ assignment_patterns = [
     # C/C++ preprocessor defines: #define API_KEY "secret123"
     '''#define\s+([A-Z_][A-Z0-9_]*)\s+["']([^"']+)["']''',
 
-    # Python with type hints: api_key: str = "secret123"
-    '''([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*\w+\s*=\s*["']([^"']+)["']''',
+    # Python with type hints: api_key: str | None = "secret123"
+    '''([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*[^=\n]+\s*=\s*["']([^"']+)["']''',
 ]
 
 # Regex patterns for known secret formats
