@@ -8,14 +8,6 @@ secrets-hunter [OPTIONS] [target]
 
 - **target**: file or directory to scan (default: current directory `.`)
 
-## Table of Contents
-- [Options](#options)
-- [Usage examples](#usage-examples)
-- [Exit codes](#exit-codes)
-- [Logging](#logging)
-
----
-
 ## Options
 
 | Flag                   |    Type | Default | Description                                                          |
