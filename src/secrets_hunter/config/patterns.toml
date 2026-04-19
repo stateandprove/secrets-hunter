@@ -9,6 +9,7 @@ exclude_keywords = [
     'sum',
     'version',
     'public',
+    'pubkey',
     'certificate',
     'cert',
     'example',
