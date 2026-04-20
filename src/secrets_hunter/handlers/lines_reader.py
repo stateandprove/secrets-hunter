@@ -73,14 +73,14 @@ class PEMAwareLinesReader(LinesReader):
 
                 lookahead_line_num, lookahead_line = lookahead_item
 
-                if expected_footer in lookahead_line:
-                    pem_candidate.append((lookahead_line_num, lookahead_line))
-                    yield make_fragment(pem_candidate)
-                    break
-
                 if PEM_BEGIN_RE.search(lookahead_line):
                     yield make_fragment(pem_candidate)
                     replay(pem_candidate[1:] + [(lookahead_line_num, lookahead_line)])
+                    break
+
+                if expected_footer in lookahead_line:
+                    pem_candidate.append((lookahead_line_num, lookahead_line))
+                    yield make_fragment(pem_candidate)
                     break
 
                 pem_candidate.append((lookahead_line_num, lookahead_line))
