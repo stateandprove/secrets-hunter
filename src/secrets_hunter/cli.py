@@ -131,7 +131,7 @@ def display_logo_with_version(logo, version):
 class CLI:
     def __init__(self):
         self.parser = argparse.ArgumentParser(
-            description="Detect secrets and sensitive information in your codebase",
+            description="The Secrets Scanner that respects your time",
             formatter_class=argparse.RawDescriptionHelpFormatter
         )
         self.parser.add_argument(
