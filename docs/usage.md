@@ -38,8 +38,6 @@ secrets-hunter .
 Example output:
 
 ```bash
-Found 4 potential secrets:
-
 ========================================================================================
 [1] Hardcoded jwt secret token at server.js:3
     Severity:   CRITICAL (confidence: 100%, reasoning: Pattern Match)
@@ -83,8 +81,6 @@ secrets-hunter . --reveal-findings
 Example output:
 
 ```bash
-Found 4 potential secrets:
-
 ========================================================================================
 [1] Hardcoded jwt secret token at server.js:3
     Severity:   CRITICAL (confidence: 100%, reasoning: Pattern Match)
