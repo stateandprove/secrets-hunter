@@ -41,13 +41,19 @@ class FalsePositiveFindingsValidator:
         if rejected:
             return True, reason
 
-        if not pem_key.body:
-            return True, MISSING_PEM_BODY
-
         if not pem_key.footer:
             return True, MISSING_PEM_FOOTER
 
-        normalized_body = "".join(pem_key.body.split())
+        if not pem_key.body:
+            return True, MISSING_PEM_BODY
+
+        normalized_body = (
+            pem_key.body
+            .replace("\\r\\n", "\n")
+            .replace("\\n", "\n")
+            .replace("\\r", "\n")
+        )
+        normalized_body = "".join(normalized_body.split())
 
         if not self.is_valid_base64_body(normalized_body):
             return True, INVALID_PEM_BODY
