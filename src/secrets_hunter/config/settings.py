@@ -48,6 +48,7 @@ class CLIDefaults:
     MAX_WORKERS = 4
     FAIL_ON_FINDINGS = False
     REVEAL_FINDINGS = False
+    TRUNCATE_LONG_MATCHES = False
     LOG_LEVEL = "INFO"
 
 
@@ -60,6 +61,7 @@ class CLIArgs:
     max_workers: int = CLIDefaults.MAX_WORKERS
     fail_on_findings: bool = CLIDefaults.FAIL_ON_FINDINGS
     reveal_findings: bool = CLIDefaults.REVEAL_FINDINGS
+    truncate_long_matches: bool = CLIDefaults.TRUNCATE_LONG_MATCHES
     log_level: str = CLIDefaults.LOG_LEVEL
 
     @classmethod
@@ -72,5 +74,6 @@ class CLIArgs:
             max_workers=args.workers,
             fail_on_findings=args.fail_on_findings,
             reveal_findings=args.reveal_findings,
+            truncate_long_matches=args.truncate_long_matches,
             log_level=args.log_level
         )

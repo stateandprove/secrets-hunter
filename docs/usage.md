@@ -10,20 +10,21 @@ secrets-hunter [OPTIONS] [target]
 
 ## Options
 
-| Flag                   |    Type | Default | Description                                                          |
-|------------------------|--------:|--------:|----------------------------------------------------------------------|
-| `-h`, `--help`         |         |         | Show help and exit.                                                  |
-| `--reveal-findings`    |    bool | `False` | Print raw matches in output.                                         |
-| `--config FILE`        |  path[] |         | Path to a TOML overlay config. Can be used multiple times.           |
-| `--json FILE`          |    path |         | Export results to a JSON file.                                       |
-| `--sarif FILE`         |    path |         | Export results to a SARIF file.                                      |
-| `--hex-entropy FLOAT`  |   float |   `3.0` | Hex entropy threshold. Lower = more sensitive / more noise.          |
-| `--b64-entropy FLOAT`  |   float |  `4.25` | Base64 entropy threshold. Lower = more sensitive / more noise.       |
-| `--min-length INT`     |     int |    `10` | Minimum candidate string length to consider.                         |
-| `--workers INT`        |     int |     `4` | Number of parallel workers when scanning directories.                |
-| `--log-level LEVEL`    |    enum |  `INFO` | Logging verbosity: `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`.  |
-| `--min-confidence INT` |     int |     `0` | Only report findings with confidence **>=** this value (0–100).      |
-| `--fail-on-findings`   |    bool | `False` | Exit with code `2` if a report contains non-rejected findings.       |
+| Flag                      |    Type | Default | Description                                                          |
+|---------------------------|--------:|--------:|----------------------------------------------------------------------|
+| `-h`, `--help`            |         |         | Show help and exit.                                                  |
+| `--reveal-findings`       |    bool | `False` | Print raw matches in output.                                         |
+| `--config`                |  path[] |         | Path to a TOML overlay config. Can be used multiple times.           |
+| `--json`                  |    path |         | Export results to a JSON file.                                       |
+| `--sarif`                 |    path |         | Export results to a SARIF file.                                      |
+| `--truncate-long-matches` |    bool | `False` | Truncate long finding matches in output.                             |
+| `--hex-entropy`           |   float |   `3.0` | Hex entropy threshold. Lower = more sensitive / more noise.          |
+| `--b64-entropy`           |   float |  `4.25` | Base64 entropy threshold. Lower = more sensitive / more noise.       |
+| `--min-length`            |     int |    `10` | Minimum candidate string length to consider.                         |
+| `--workers`               |     int |     `4` | Number of parallel workers when scanning directories.                |
+| `--log-level`             |    enum |  `INFO` | Logging verbosity: `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`.  |
+| `--min-confidence`        |     int |     `0` | Only report findings with confidence **>=** this value (0–100).      |
+| `--fail-on-findings`      |    bool | `False` | Exit with code `2` if a report contains non-rejected findings.       |
 
 ---
 
@@ -177,6 +178,12 @@ Example output:
 
 ```bash
 secrets-hunter . --reveal-findings --json results.json
+```
+
+### Export as JSON, reveal findings and truncate long matches
+
+```bash
+secrets-hunter . --reveal-findings --json results.json --truncate-long-matches
 ```
 
 ### Export as JSON, reveal findings and filter out low-confidence findings
