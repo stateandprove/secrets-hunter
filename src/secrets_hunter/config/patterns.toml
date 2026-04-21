@@ -8,6 +8,7 @@ exclude_keywords = [
     'integrity',
     'sum',
     'version',
+    'reference',
     'public',
     'pubkey',
     'certificate',
