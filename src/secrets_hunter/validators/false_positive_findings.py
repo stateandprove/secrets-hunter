@@ -35,17 +35,17 @@ class FalsePositiveFindingsValidator:
         return False, None
 
     def check_rejection_for_pem_key(self, pem_key: PEMKeyFragment) -> tuple[bool, ExcludePattern | None]:
-        pem_header = pem_key.header or ""
-        rejected, reason = self.check_rejection_for_pem_header(pem_header)
-
-        if rejected:
-            return True, reason
-
         if not pem_key.footer:
             return True, MISSING_PEM_FOOTER
 
         if not pem_key.body:
             return True, MISSING_PEM_BODY
+
+        pem_header = pem_key.header or ""
+        rejected, reason = self.check_rejection_for_pem_header(pem_header)
+
+        if rejected:
+            return True, reason
 
         normalized_body = (
             pem_key.body
