@@ -6,6 +6,7 @@ from dataclasses import dataclass
 HEX_ENTROPY_MAX = 4.5
 B64_ENTROPY_MAX = 6.0
 MAX_WORKERS_MULTIPLIER = 2
+MIN_PEM_BODY_BYTES = 16
 STRIP = '.,;:()[]{}<>"\'`'
 
 PEM_TYPES = [
