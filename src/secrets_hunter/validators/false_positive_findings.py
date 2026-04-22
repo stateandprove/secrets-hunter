@@ -1,12 +1,20 @@
+import base64
 import re
 
-from secrets_hunter.models import Finding, StringSource
+from binascii import Error as BinasciiError
+
+from secrets_hunter.config.settings import MIN_PEM_BODY_BYTES
+from secrets_hunter.models import Finding, DBConnectionFragment, PEMKeyFragment
 from secrets_hunter.models.config import ExcludePattern
 
 # Special patterns
 PUBLIC_PEM = ExcludePattern(name="Public", category="Key", pattern=re.compile("PUBLIC"))
 CERT = ExcludePattern(name="Public", category="Certificate", pattern=re.compile("CERTIFICATE"))
 SEMANTICS = ExcludePattern(name="Semantics -", category="string with English-like words", pattern=re.compile(''))
+MISSING_PEM_BODY = ExcludePattern(name="Missing", category="PEM body", pattern=re.compile(''))
+TOO_SHORT_PEM_BODY = ExcludePattern(name="Too short", category="PEM body", pattern=re.compile(''))
+INVALID_PEM_BODY = ExcludePattern(name="Invalid", category="PEM base64 body", pattern=re.compile(''))
+MISSING_PEM_FOOTER = ExcludePattern(name="Missing", category="PEM footer", pattern=re.compile(''))
 DB_CONN_PLACEHOLDER = ExcludePattern(
     name="db connection", category="placeholder", pattern=re.compile(r'%[a-zA-Z]|\{.*?}|\$\{.*?}')
 )
@@ -27,6 +35,48 @@ class FalsePositiveFindingsValidator:
             return True, CERT
 
         return False, None
+
+    def check_rejection_for_pem_key(self, pem_key: PEMKeyFragment) -> tuple[bool, ExcludePattern | None]:
+        if not pem_key.footer:
+            return True, MISSING_PEM_FOOTER
+
+        if not pem_key.body:
+            return True, MISSING_PEM_BODY
+
+        pem_header = pem_key.header or ""
+        rejected, reason = self.check_rejection_for_pem_header(pem_header)
+
+        if rejected:
+            return True, reason
+
+        normalized_body = (
+            pem_key.body
+            .replace("\\r\\n", "\n")
+            .replace("\\n", "\n")
+            .replace("\\r", "\n")
+        )
+        normalized_body = "".join(normalized_body.split())
+
+        decoded_body = self.decode_base64_body(normalized_body)
+
+        if decoded_body is None:
+            return True, INVALID_PEM_BODY
+
+        if len(decoded_body) < MIN_PEM_BODY_BYTES:
+            return True, TOO_SHORT_PEM_BODY
+
+        return False, None
+
+    @staticmethod
+    def decode_base64_body(body: str) -> bytes | None:
+        if not body:
+            return None
+
+        try:
+            body_decoded = base64.b64decode(body, validate=True)
+            return body_decoded
+        except (ValueError, BinasciiError):
+            return None
 
     def check_rejection_for_db_conn_string(self, db_conn_string: str) -> tuple[bool, ExcludePattern | None]:
         password_match = re.search(r'://[^:/@]+:([^@/\s]+)@', db_conn_string)
@@ -72,10 +122,11 @@ class FalsePositiveFindingsValidator:
 
     def check_rejection_for_finding_value(self, finding: Finding) -> tuple[bool, ExcludePattern | None]:
         match = finding.match
+        fragment = finding.fragment
 
-        if finding.source is StringSource.PEM_HEADER:
-            return self.check_rejection_for_pem_header(match)
-        elif finding.source is StringSource.DB_CONNECTION:
+        if isinstance(fragment, PEMKeyFragment):
+            return self.check_rejection_for_pem_key(fragment)
+        elif isinstance(fragment, DBConnectionFragment):
             return self.check_rejection_for_db_conn_string(match)
 
         return self.check_rejection_for_generic_string(finding)

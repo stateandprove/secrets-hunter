@@ -8,29 +8,23 @@ secrets-hunter [OPTIONS] [target]
 
 - **target**: file or directory to scan (default: current directory `.`)
 
-## Table of Contents
-- [Options](#options)
-- [Usage examples](#usage-examples)
-- [Exit codes](#exit-codes)
-- [Logging](#logging)
-
----
-
 ## Options
 
-| Flag                   |    Type | Default | Description                                                         |
-|------------------------|--------:|--------:|---------------------------------------------------------------------|
-| `-h`, `--help`         |         |         | Show help and exit.                                                 |
-| `--reveal-findings`    |    bool | `False` | Print raw matches in output.                                        |
-| `--config FILE`        |  path[] |         | Path to a TOML overlay config. Can be used multiple times.          |
-| `--json FILE`          |    path |         | Export results to a JSON file.                                      |
-| `--sarif FILE`         |    path |         | Export results to a SARIF file.                                     |
-| `--hex-entropy FLOAT`  |   float |   `3.0` | Hex entropy threshold. Lower = more sensitive / more noise.         |
-| `--b64-entropy FLOAT`  |   float |   `4.3` | Base64 entropy threshold. Lower = more sensitive / more noise.      |
-| `--min-length INT`     |     int |    `10` | Minimum candidate string length to consider.                        |
-| `--workers INT`        |     int |     `4` | Number of parallel workers when scanning directories.               |
-| `--log-level LEVEL`    |    enum |  `INFO` | Logging verbosity: `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`. |
-| `--min-confidence INT` |     int |     `0` | Only report findings with confidence **>=** this value (0–100).     |
+| Flag                      |    Type | Default | Description                                                          |
+|---------------------------|--------:|--------:|----------------------------------------------------------------------|
+| `-h`, `--help`            |         |         | Show help and exit.                                                  |
+| `--reveal-findings`       |    bool | `False` | Print raw matches in output.                                         |
+| `--config`                |  path[] |         | Path to a TOML overlay config. Can be used multiple times.           |
+| `--json`                  |    path |         | Export results to a JSON file.                                       |
+| `--sarif`                 |    path |         | Export results to a SARIF file.                                      |
+| `--truncate-long-matches` |    bool | `False` | Truncate long finding matches in output.                             |
+| `--hex-entropy`           |   float |   `3.0` | Hex entropy threshold. Lower = more sensitive / more noise.          |
+| `--b64-entropy`           |   float |  `4.25` | Base64 entropy threshold. Lower = more sensitive / more noise.       |
+| `--min-length`            |     int |    `10` | Minimum candidate string length to consider.                         |
+| `--workers`               |     int |     `4` | Number of parallel workers when scanning directories.                |
+| `--log-level`             |    enum |  `INFO` | Logging verbosity: `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`.  |
+| `--min-confidence`        |     int |     `0` | Only report findings with confidence **>=** this value (0–100).      |
+| `--fail-on-findings`      |    bool | `False` | Exit with code `2` if a report contains non-rejected findings.       |
 
 ---
 
@@ -45,8 +39,6 @@ secrets-hunter .
 Example output:
 
 ```bash
-Found 4 potential secrets:
-
 ========================================================================================
 [1] Hardcoded jwt secret token at server.js:3
     Severity:   CRITICAL (confidence: 100%, reasoning: Pattern Match)
@@ -66,9 +58,9 @@ Found 4 potential secrets:
     Match:      ***MASKED***
     Context:    ***MASKED***
 ----------------------------------------------------------------------------------------
-[4] Hardcoded file checksum at app.py:10
-    Severity:   INFO (confidence: 0%, reasoning: \b[0-9a-f]{40}\b in value)
-    Variable:   file_checksum
+[4] Hardcoded build id at app.py:10
+    Severity:   INFO (confidence: 0%, reasoning: SHA1 hash in value)
+    Variable:   build_id
     Match:      ***MASKED***
     Context:    ***MASKED***
 ----------------------------------------------------------------------------------------
@@ -90,8 +82,6 @@ secrets-hunter . --reveal-findings
 Example output:
 
 ```bash
-Found 4 potential secrets:
-
 ========================================================================================
 [1] Hardcoded jwt secret token at server.js:3
     Severity:   CRITICAL (confidence: 100%, reasoning: Pattern Match)
@@ -111,11 +101,11 @@ Found 4 potential secrets:
     Match:      xxxxxxxxxxxxx/xxxxxxx/xxxxxxxxxxxxxxxxxx
     Context:    AWS_SECRET_ACCESS_KEY = "xxxxxxxxxxxxx/xxxxxxx/xxxxxxxxxxxxxxxxxx"
 ----------------------------------------------------------------------------------------
-[4] Hardcoded file checksum at app.py:10
-    Severity:   INFO (confidence: 0%, reasoning: \b[0-9a-f]{40}\b in value)
-    Variable:   file_checksum
+[4] Hardcoded build id at app.py:10
+    Severity:   INFO (confidence: 0%, reasoning: SHA1 hash in value)
+    Variable:   build_id
     Match:      xxxxxxxx
-    Context:    FILE_CHECKSUM = "xxxxxxxx"
+    Context:    BUILD_ID = "xxxxxxxx"
 ----------------------------------------------------------------------------------------
 ```
 
@@ -169,17 +159,17 @@ Example output:
         "context_var": "aws_secret_access_key"
     },
     {
-        "title": "Hardcoded file checksum at app.py:10",
+        "title": "Hardcoded build id at app.py:10",
         "file": "app.py",
         "line": 10,
         "type": "High Entropy Hex String",
         "match": "***MASKED***",
         "context": "***MASKED***",
         "severity": "INFO",
-        "confidence_reasoning": "\\b[0-9a-f]{40}\\b in value",
+        "confidence_reasoning": "SHA1 hash in value",
         "detection_method": "entropy",
         "confidence": 0,
-        "context_var": "file_checksum"
+        "context_var": "build_id"
     }
 ]
 ```
@@ -188,6 +178,12 @@ Example output:
 
 ```bash
 secrets-hunter . --reveal-findings --json results.json
+```
+
+### Export as JSON, reveal findings and truncate long matches
+
+```bash
+secrets-hunter . --reveal-findings --json results.json --truncate-long-matches
 ```
 
 ### Export as JSON, reveal findings and filter out low-confidence findings
@@ -200,6 +196,12 @@ secrets-hunter . --reveal-findings --json results.json --min-confidence 75
 
 ```bash
 secrets-hunter . --sarif results.sarif
+```
+
+### Fail only on higher-confidence findings
+
+```bash
+secrets-hunter . --min-confidence 75 --fail-on-findings
 ```
 
 ### Use overlay config
@@ -222,7 +224,9 @@ Learn more about configuration in the [Configuration docs](https://docs.fvlcn.de
 
 ## Exit codes
 
-Always returns `0` unless scan fails.
+- `0` - scan succeeded and no actionable findings remained
+- `1` - scan failed because of an input/runtime error
+- `2` - scan succeeded and actionable findings were reported while `--fail-on-findings` was set
 
 ---
 
