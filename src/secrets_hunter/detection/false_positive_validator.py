@@ -4,7 +4,8 @@ import re
 from binascii import Error as BinasciiError
 
 from secrets_hunter.config.settings import MIN_PEM_BODY_BYTES
-from secrets_hunter.models import Finding, DBConnectionFragment, PEMKeyFragment
+from secrets_hunter.detection.fragmenter import DBConnectionFragment, PEMKeyFragment
+from secrets_hunter.models import Finding
 from secrets_hunter.models.config import ExcludePattern
 
 # Special patterns

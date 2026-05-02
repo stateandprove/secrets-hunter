@@ -1,10 +1,9 @@
 import re
 
-from secrets_hunter.detectors.base import BaseDetector
+from secrets_hunter.detection.detectors.base import BaseDetector
 from secrets_hunter.config import CLIArgs
-from secrets_hunter.models import (
-    Finding, DetectionMethod, Severity, Confidence, LineFragment
-)
+from secrets_hunter.detection.fragmenter import LineFragment
+from secrets_hunter.models import Finding, DetectionMethod, Severity, Confidence
 
 from .utils import entropy as entropy_utils
 

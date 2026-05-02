@@ -50,6 +50,7 @@ class CLIDefaults:
     FAIL_ON_FINDINGS = False
     REVEAL_FINDINGS = False
     TRUNCATE_LONG_MATCHES = False
+    SKIP_TLS_VERIFY = False
     LOG_LEVEL = "INFO"
 
 
@@ -64,6 +65,10 @@ class CLIArgs:
     reveal_findings: bool = CLIDefaults.REVEAL_FINDINGS
     truncate_long_matches: bool = CLIDefaults.TRUNCATE_LONG_MATCHES
     log_level: str = CLIDefaults.LOG_LEVEL
+    git_revset: str | None = None
+    git_max_count: int | None = None
+    domain: str | None = None
+    skip_tls_verify: bool = CLIDefaults.SKIP_TLS_VERIFY
 
     @classmethod
     def from_argparse(cls, args):
@@ -76,5 +81,9 @@ class CLIArgs:
             fail_on_findings=args.fail_on_findings,
             reveal_findings=args.reveal_findings,
             truncate_long_matches=args.truncate_long_matches,
-            log_level=args.log_level
+            log_level=args.log_level,
+            git_revset=args.git_revset,
+            git_max_count=args.git_max_count,
+            domain=args.domain,
+            skip_tls_verify=args.skip_tls_verify
         )
