@@ -17,7 +17,7 @@ class DomainScanner(BaseScanner):
         self.domain = domain
 
     def found_message(self, total_items: int) -> str:
-        return f"Found {total_items} URL(s) to scan"
+        return f"Got {total_items} URL(s) to scan"
 
     @property
     def empty_message(self) -> str:

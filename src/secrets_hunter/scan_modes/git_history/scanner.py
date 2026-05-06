@@ -37,7 +37,7 @@ class GitHistoryScanner(BaseScanner):
         self._empty_message = "No changed files to scan"
 
     def found_message(self, total_items: int) -> str:
-        return f"Found {total_items} git blob(s) to scan"
+        return f"Got {total_items} git blob(s) to scan"
 
     @property
     def empty_message(self) -> str:

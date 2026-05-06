@@ -60,7 +60,7 @@ class GitHistoryReader:
             ["git", "show", f"{commit_sha}:{repo_rel_path}"],
             cwd=self.repo_root,
             capture_output=True,
-            check=False,
+            check=False
         )
 
         if result.returncode == 0:
@@ -140,7 +140,7 @@ class GitHistoryReader:
             ["git", *args],
             cwd=cwd or self.repo_root,
             capture_output=True,
-            check=False,
+            check=False
         )
 
         if result.returncode == 0:
