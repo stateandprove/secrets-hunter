@@ -26,7 +26,7 @@ class FilesystemScanner(BaseScanner):
         return self.target_path.is_file() and len(items) == 1
 
     def found_message(self, total_items: int) -> str:
-        return f"Got {total_items} file(s) to scan"
+        return f"Got {total_items} files to scan"
 
     @property
     def empty_message(self) -> str:
