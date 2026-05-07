@@ -2,7 +2,7 @@
 
 Secrets Hunter can be installed in three ways: via PyPI, from source, or via Docker.
 
-> **Requirements:** Python 3.11+
+> Requires Python 3.11 or newer.
 
 ## From PyPI
 

@@ -43,7 +43,7 @@ For a deeper explanation of how regex patterns, entropy checks, assignment conte
 
 ## Installation
 
-> **Requirements:** Python 3.11+
+> Requires Python 3.11 or newer.
 
 Secrets Hunter can be installed via PyPI, from source, or using Docker. For a quick start, install directly from PyPI:
 
