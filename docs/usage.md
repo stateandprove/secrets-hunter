@@ -83,6 +83,14 @@ Example output:
 secrets-hunter path/to/project
 ```
 
+#### Scan a directory with Docker
+
+Mount the directory you want to scan and pass the mounted path as the target:
+
+```bash
+docker run --rm -v ~/projects/my-app:/scan ghcr.io/fvlcn/secrets-hunter:latest /scan
+```
+
 #### Scan a single file
 
 ```bash
@@ -119,6 +127,21 @@ Scan the last 20 commits reachable from `HEAD`:
 secrets-hunter . --git-revset HEAD --git-max-count 20
 ```
 
+#### Scan git history with Docker
+
+Mount the repository, set it as the working directory, and mark the mounted path as a safe Git directory inside the container:
+
+```bash
+docker run --rm \
+  -e GIT_CONFIG_COUNT=1 \
+  -e GIT_CONFIG_KEY_0=safe.directory \
+  -e GIT_CONFIG_VALUE_0=/scan \
+  -v ~/projects/my-app:/scan \
+  -w /scan \
+  ghcr.io/fvlcn/secrets-hunter:latest \
+  . --git-revset main..HEAD
+```
+
 ### Domain Scans
 
 Domain scans check the built-in list of commonly exposed relative paths on the target host.
@@ -127,6 +150,14 @@ Domain scans check the built-in list of commonly exposed relative paths on the t
 
 ```bash
 secrets-hunter --domain example.com
+```
+
+#### Scan exposed domain paths with Docker
+
+Domain scans do not need a mounted local directory:
+
+```bash
+docker run --rm ghcr.io/fvlcn/secrets-hunter:latest --domain example.com
 ```
 
 #### Skip TLS verification
