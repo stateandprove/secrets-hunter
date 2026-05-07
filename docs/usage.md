@@ -6,7 +6,7 @@ Secrets Hunter runs scans from the command line:
 secrets-hunter [OPTIONS] [target]
 ```
 
->By default, `target` is treated as a filesystem file or directory.
+> By default, `target` is treated as a filesystem file or directory.
 
 Other scan modes can be enabled with flags:
 

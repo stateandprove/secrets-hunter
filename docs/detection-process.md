@@ -129,6 +129,7 @@ NhAAAAAwEAAQAAAgEA37a60AuK/dgXtxyVgnvrE7LGs9zX/bJuy0eBuKpn03m3cMZFhPWI
 Xz+q6CU9cR1H5wqvtHoOqLKajo9iB6XYjPlpw8b2mvc66UPGFCUEMoWxzf3QdFXfU/veaG
 -----END RSA PRIVATE KEY-----
 ```
+
 > Malformed PEM blocks do not stop scanning; later secrets can still be found.
 
 After rejecting a malformed PEM candidate, Secrets Hunter returns the remaining lines to the normal scanning flow. Body-like lines from the malformed block are then scanned as generic strings and can still produce low-confidence entropy findings.
@@ -207,7 +208,7 @@ DATABASE_URL="postgres://app_user:example@db.example.com:5432/app"
 
 Findings are assigned confidence based on detection method, assignment context, secret-like keywords, and false-positive checks.
 
->Confidence is used for prioritization and filtering; it does not mean the scanner has validated that a credential is live.
+> Confidence is used for prioritization and filtering; it does not mean the scanner has validated that a credential is live.
 
 | Confidence | Meaning                                                    |
 |------------|------------------------------------------------------------|
@@ -231,7 +232,7 @@ secrets-hunter . --min-confidence 75
 
 ### Masking
 
->Findings are masked by default so scan results can be used safely in terminals, logs, and CI systems.
+> Findings are masked by default so scan results can be used safely in terminals, logs, and CI systems.
 
 Use `--reveal-findings` only when raw values are needed.
 
