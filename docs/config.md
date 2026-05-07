@@ -11,7 +11,7 @@ You can then apply **one or more overlay TOML files** via CLI:
 secrets-hunter . --config team-overrides.toml
 ```
 
-Overlays are applied **in the order provided**. Overlays don't replace the entire configuration, but merge on top of existing settings instead.
+> Overlays are applied **in the order provided**. Overlays don't replace the entire configuration, but merge on top of existing settings instead.
 
 ## Viewing Current Configuration
 
@@ -176,13 +176,15 @@ Applies to:
 - `ignore.extensions`
 - `ignore.dirs`
 
-Lists can’t be overridden — only appended and deduplicated (first occurrence wins). To undo something from an earlier file, use the matching `remove_*` key.
+> Lists can’t be overridden — only appended and deduplicated (first occurrence wins). To undo something from an earlier file, use the matching `remove_*` key.
 
 ### Removals
 
 If you need to remove a previously added item, use the corresponding `remove_*` key.
 
-Within each config file, removals are applied before additions. If the same overlay removes and adds the same item, the added item remains. To remove something added by another overlay, place the removal in a later overlay file.
+> Within each config file, removals are applied before additions.
+ 
+If the same overlay removes and adds the same item, the added item remains. To remove something added by another overlay, place the removal in a later overlay file.
 
 Supported removal keys:
 

@@ -125,8 +125,9 @@ NhAAAAAwEAAQAAAgEA37a60AuK/dgXtxyVgnvrE7LGs9zX/bJuy0eBuKpn03m3cMZFhPWI
 Xz+q6CU9cR1H5wqvtHoOqLKajo9iB6XYjPlpw8b2mvc66UPGFCUEMoWxzf3QdFXfU/veaG
 -----END RSA PRIVATE KEY-----
 ```
+> Malformed PEM blocks do not stop scanning; later secrets can still be found.
 
-After rejecting a malformed PEM candidate, Secrets Hunter returns the remaining lines to the normal scanning flow. This prevents an unmatched header from hiding later secrets. Body-like lines from the malformed block are then scanned as generic strings and can still produce low-confidence entropy findings.
+After rejecting a malformed PEM candidate, Secrets Hunter returns the remaining lines to the normal scanning flow. Body-like lines from the malformed block are then scanned as generic strings and can still produce low-confidence entropy findings.
 
 ## Generic Secrets
 
@@ -152,7 +153,9 @@ A value can also be rejected because of the detected value itself, not only beca
 value = "c12ddf3bfeeda5a2f7dd28feee62e1d3afaf097c"
 ```
 
-The assigned string has high entropy and assignment context, but it also matches the shape of a SHA1 hash. Secrets Hunter treats known hash formats as false positives unless the surrounding context identifies the value as a secret.
+The assigned string has high entropy and assignment context, but it also matches the shape of a SHA1 hash.
+
+> Secrets Hunter treats known hash formats as false positives unless the surrounding context identifies the value as a secret.
 
 Regex matches are treated as high-confidence findings, but false-positive rules still apply. Consider this line:
 
@@ -198,7 +201,9 @@ DATABASE_URL="postgres://app_user:example@db.example.com:5432/app"
 
 ## Confidence
 
-Findings are assigned confidence based on detection method, assignment context, secret-like keywords, and false-positive checks. Confidence is used for prioritization and filtering; it does not mean the scanner has validated that a credential is live.
+Findings are assigned confidence based on detection method, assignment context, secret-like keywords, and false-positive checks.
+
+>Confidence is used for prioritization and filtering; it does not mean the scanner has validated that a credential is live.
 
 | Confidence | Meaning                                                    |
 |------------|------------------------------------------------------------|
@@ -222,7 +227,9 @@ secrets-hunter . --min-confidence 75
 
 ### Masking
 
-Findings are masked by default so scan results can be used safely in terminals, logs, and CI systems. Use `--reveal-findings` only when raw values are needed.
+>Findings are masked by default so scan results can be used safely in terminals, logs, and CI systems.
+
+Use `--reveal-findings` only when raw values are needed.
 
 ```bash
 secrets-hunter . --reveal-findings
