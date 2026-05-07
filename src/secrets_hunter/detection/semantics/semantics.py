@@ -3,7 +3,7 @@ import re
 from .bigrams import BIGRAM_MODEL
 from .corpus import CORPUS
 
-from secrets_hunter.models import StringSemanticsClassification, StringKind
+from .models import StringSemanticsClassification, StringKind
 
 
 class StringSemanticsClassifier:

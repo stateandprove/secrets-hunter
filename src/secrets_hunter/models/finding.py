@@ -1,7 +1,7 @@
 from dataclasses import dataclass, replace, asdict
 from enum import Enum, IntEnum
 
-from .line_fragment import LineFragment
+from secrets_hunter.detection.fragmenter import LineFragment
 
 REPORT_EXCLUDED_FIELDS = {"fragment"}
 
@@ -43,6 +43,8 @@ class Finding:
     confidence: Confidence
     fragment: LineFragment
     context_var: str | None = None
+    commit: str | None = None
+    vulnerable_url: str | None = None
 
     def to_display(self) -> dict[str, object]:
         data = asdict(self)
@@ -69,6 +71,12 @@ class Finding:
 
     def with_match(self, match: str) -> 'Finding':
         return replace(self, match=match)
+
+    def with_commit(self, commit: str) -> 'Finding':
+        return replace(self, commit=commit)
+
+    def with_vulnerable_url(self, vulnerable_url: str) -> 'Finding':
+        return replace(self, vulnerable_url=vulnerable_url)
 
     def with_context(
         self,

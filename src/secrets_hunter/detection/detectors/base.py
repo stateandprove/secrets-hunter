@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import List
 from pathlib import Path
+from urllib.parse import urlparse
 
 from secrets_hunter.models import Finding
 
@@ -10,7 +10,7 @@ class BaseDetector(ABC):
         self.base_path: Path | None = None
 
     @abstractmethod
-    def detect(self, line: str, line_num: int, filepath: str, strings: List[str]) -> List[Finding]:
+    def detect(self, line: str, line_num: int, filepath: str, strings: list[str]) -> list[Finding]:
         pass
 
     def set_base_path(self, target: str) -> None:
@@ -18,6 +18,11 @@ class BaseDetector(ABC):
         self.base_path = target_path if target_path.is_dir() else target_path.parent
 
     def format_filepath(self, filepath: str) -> str:
+        parsed = urlparse(filepath)
+
+        if parsed.scheme in {"http", "https"}:
+            return filepath
+
         fpath = Path(filepath)
 
         if not fpath.is_absolute():

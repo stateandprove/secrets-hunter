@@ -1,14 +1,14 @@
 import re
 
 from secrets_hunter.config import STRIP, PEM_BEGIN_RE, DB_URI_RE
-from secrets_hunter.models.line_fragment import (
+from secrets_hunter.detection.fragmenter.models import (
     LineFragment, GenericStringFragment, DBConnectionFragment, PEMKeyFragment, SourceFragment
 )
 
 
-class LineFragmenter:
+class SourceFragmenter:
     """
-    Extracts candidate secret fragments from a SourceFragment.
+    Splits source text into candidate values for secret detection.
     """
 
     def __init__(self, assignment_patterns, min_token_length, entropy_detector):
@@ -80,7 +80,6 @@ class LineFragmenter:
                 footer = expected_footer
                 blank_end = fragment_end
             else:
-                fragment_end = header_match.end()
                 fragment_content = header_match.group(0)
                 body = None
                 footer = None

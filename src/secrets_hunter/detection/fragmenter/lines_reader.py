@@ -1,13 +1,12 @@
 from collections import deque
 from typing import Iterable
-from pathlib import Path
 
 from secrets_hunter.config import PEM_BEGIN_RE
-from secrets_hunter.models import SourceFragment
+from secrets_hunter.detection.fragmenter.models import SourceFragment
 
 
 class LinesReader:
-    def read(self, lines: Iterable[str], filepath: Path):
+    def read(self, lines: Iterable[str]):
         for line_num, line in enumerate(lines, 1):
             yield SourceFragment(
                 content=line,
@@ -17,7 +16,7 @@ class LinesReader:
 
 
 class PEMAwareLinesReader(LinesReader):
-    def read(self, lines: Iterable[str], filepath: Path):
+    def read(self, lines: Iterable[str]):
         iterator = enumerate(lines, 1)
         pending: deque[tuple[int, str]] = deque()
 

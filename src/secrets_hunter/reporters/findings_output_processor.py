@@ -65,10 +65,10 @@ def truncate_match(match_text: str) -> str:
     return truncate_generic_match(match_text)
 
 
-class FindingsProcessor:
+class FindingsOutputProcessor:
     @staticmethod
-    def process(findings: list[Finding], config: CLIArgs) -> list[Finding]:
-        """Filter, mask, and sort findings."""
+    def prepare(findings: list[Finding], config: CLIArgs) -> list[Finding]:
+        """Prepare findings for output by filtering, truncating, masking, and sorting."""
         output_findings: list[Finding] = []
 
         for finding in findings:

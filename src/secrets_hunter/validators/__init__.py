@@ -1,5 +1,4 @@
-from .false_positive_findings import FalsePositiveFindingsValidator
 from .cli_args import CLIArgsValidator
-from .file_validator import FileValidator
+from .text_content_validator import TextContentValidator
 
-__all__ = ["FalsePositiveFindingsValidator", "CLIArgsValidator", "FileValidator"]
+__all__ = ["CLIArgsValidator", "TextContentValidator"]
