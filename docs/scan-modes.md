@@ -2,7 +2,7 @@
 
 Secrets Hunter can detect secrets in files, git history, and exposed domain paths. The way a given target is collected and processed is called a **scan mode**.
 
-Each scan mode builds a collection of scan targets: files for filesystem scans, changed file blobs from selected commits for git history scans, and relative URL paths for domain scans.
+> Each scan mode builds a collection of scan targets: files for filesystem scans, changed file blobs from selected commits for git history scans, and relative URL paths for domain scans.
 
 Scan modes are separated from detection logic. They decide where content comes from, while the detection process decides whether that content contains secrets.
 
