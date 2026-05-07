@@ -1,20 +1,29 @@
 # Usage
 
-**Secrets Hunter** scans a **file** or a **directory**:
+Secrets Hunter runs scans from the command line:
 
 ```bash
 secrets-hunter [OPTIONS] [target]
 ```
 
-- **target**: file or directory to scan (default: current directory `.`)
+By default, `target` is treated as a filesystem file or directory. Other scan modes can be enabled with flags:
+
+- `--git-revset` scans git history using the selected revset.
+- `--domain` scans commonly exposed paths on a host or domain.
+
+If `target` is omitted, Secrets Hunter defaults to the current directory.
 
 ## Options
 
 | Flag                      |    Type | Default | Description                                                          |
 |---------------------------|--------:|--------:|----------------------------------------------------------------------|
 | `-h`, `--help`            |         |         | Show help and exit.                                                  |
-| `--reveal-findings`       |    bool | `False` | Print raw matches in output.                                         |
 | `--config`                |  path[] |         | Path to a TOML overlay config. Can be used multiple times.           |
+| `--git-revset`            |  string |         | Scan git history using commits selected by git `rev-list` syntax.    |
+| `--git-max-count`         |     int |         | Limit the number of commits selected by `--git-revset`.              |
+| `--domain`                |  string |         | Scan commonly exposed paths on a host or domain.                     |
+| `--skip-tls-verify`       |    bool | `False` | Skip TLS certificate verification for domain scans.                  |
+| `--reveal-findings`       |    bool | `False` | Print raw matches in output.                                         |
 | `--json`                  |    path |         | Export results to a JSON file.                                       |
 | `--sarif`                 |    path |         | Export results to a SARIF file.                                      |
 | `--truncate-long-matches` |    bool | `False` | Truncate long finding matches in output.                             |
@@ -28,9 +37,11 @@ secrets-hunter [OPTIONS] [target]
 
 ---
 
-## Usage examples
+## Usage Examples
 
-### Scan the current directory
+### Filesystem Scans
+
+#### Scan the current directory
 
 ```bash
 secrets-hunter .
@@ -66,50 +77,83 @@ Example output:
 ----------------------------------------------------------------------------------------
 ```
 
-### Scan a single file
+#### Scan a directory
+
+```bash
+secrets-hunter path/to/project
+```
+
+#### Scan a single file
 
 ```bash
 secrets-hunter path/to/file.py
 ```
 
-### Reveal findings (unmasked)
+### Git History Scans
+
+Git history scans use `--git-revset`, which accepts git `rev-list` syntax.
+
+#### Scan a commit
+
+Use `<commit-sha>^!` to scan only one commit:
+
+```bash
+secrets-hunter . --git-revset '<commit-sha>^!'
+```
+
+#### Scan a pull request
+
+Scan commits that are on the current branch but not on `main`:
+
+```bash
+secrets-hunter . --git-revset main..HEAD
+```
+
+Replace `main` with the base branch if needed.
+
+#### Scan branch history
+
+Scan the last 20 commits reachable from `HEAD`:
+
+```bash
+secrets-hunter . --git-revset HEAD --git-max-count 20
+```
+
+### Domain Scans
+
+Domain scans check the built-in list of commonly exposed relative paths on the target host.
+
+#### Scan exposed domain paths
+
+```bash
+secrets-hunter --domain example.com
+```
+
+#### Skip TLS verification
+
+For internal or controlled environments with custom TLS, certificate verification can be skipped:
+
+```bash
+secrets-hunter --domain https://internal.example --skip-tls-verify
+```
+
+### Mode Constraints
+
+- `--git-max-count` requires `--git-revset`.
+- `--skip-tls-verify` requires `--domain`.
+- `--domain` cannot be combined with `--git-revset`.
+
+### Common Options
+
+#### Reveal findings (unmasked)
+
 Findings are masked by default. To show raw values, use the `--reveal-findings` flag:
 
 ```bash
 secrets-hunter . --reveal-findings
 ```
 
-Example output:
-
-```bash
-========================================================================================
-[1] Hardcoded jwt secret token at server.js:3
-    Severity:   CRITICAL (confidence: 100%, reasoning: Pattern Match)
-    Variable:   jwt_secret_token
-    Match:      eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.xxxxxxxxxx.xxxxxxx...
-    Context:    const JWT_SECRET_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.xxxxxx'
-----------------------------------------------------------------------------------------
-[2] Hardcoded aws access key at app.py:6
-    Severity:   CRITICAL (confidence: 100%, reasoning: Pattern Match)
-    Variable:   aws_access_key
-    Match:      AKIAxxxxxxxxxxxxxxxx
-    Context:    AWS_ACCESS_KEY = "AKIAxxxxxxxxxxxxxxxx"
-----------------------------------------------------------------------------------------
-[3] Hardcoded aws secret access key at app.py:7
-    Severity:   CRITICAL (confidence: 100%, reasoning: High Entropy in context of secret key/variable assignment - secret)
-    Variable:   aws_secret_access_key
-    Match:      xxxxxxxxxxxxx/xxxxxxx/xxxxxxxxxxxxxxxxxx
-    Context:    AWS_SECRET_ACCESS_KEY = "xxxxxxxxxxxxx/xxxxxxx/xxxxxxxxxxxxxxxxxx"
-----------------------------------------------------------------------------------------
-[4] Hardcoded build id at app.py:10
-    Severity:   INFO (confidence: 0%, reasoning: SHA1 hash in value)
-    Variable:   build_id
-    Match:      xxxxxxxx
-    Context:    BUILD_ID = "xxxxxxxx"
-----------------------------------------------------------------------------------------
-```
-
-### Export as JSON
+#### Export as JSON
 
 ```bash
 secrets-hunter . --json results.json
@@ -131,87 +175,50 @@ Example output:
         "detection_method": "pattern",
         "confidence": 100,
         "context_var": "jwt_secret_token"
-    },
-    {
-        "title": "Hardcoded aws access key at app.py:6",
-        "file": "app.py",
-        "line": 6,
-        "type": "AWS Access Key",
-        "match": "***MASKED***",
-        "context": "***MASKED***",
-        "severity": "CRITICAL",
-        "confidence_reasoning": "Pattern Match",
-        "detection_method": "pattern",
-        "confidence": 100,
-        "context_var": "aws_access_key"
-    },
-    {
-        "title": "Hardcoded aws secret access key at app.py:7",
-        "file": "app.py",
-        "line": 7,
-        "type": "High Entropy Base64 String",
-        "match": "***MASKED***",
-        "context": "***MASKED***",
-        "severity": "CRITICAL",
-        "confidence_reasoning": "High Entropy in context of secret key/variable assignment - secret",
-        "detection_method": "entropy",
-        "confidence": 100,
-        "context_var": "aws_secret_access_key"
-    },
-    {
-        "title": "Hardcoded build id at app.py:10",
-        "file": "app.py",
-        "line": 10,
-        "type": "High Entropy Hex String",
-        "match": "***MASKED***",
-        "context": "***MASKED***",
-        "severity": "INFO",
-        "confidence_reasoning": "SHA1 hash in value",
-        "detection_method": "entropy",
-        "confidence": 0,
-        "context_var": "build_id"
     }
 ]
 ```
 
-### Export as JSON and reveal findings
+#### Export as JSON and reveal findings
 
 ```bash
 secrets-hunter . --reveal-findings --json results.json
 ```
 
-### Export as JSON, reveal findings and truncate long matches
+#### Export as JSON, reveal findings and truncate long matches
 
 ```bash
 secrets-hunter . --reveal-findings --json results.json --truncate-long-matches
 ```
 
-### Export as JSON, reveal findings and filter out low-confidence findings
+#### Export as JSON, reveal findings and filter out low-confidence findings
 
 ```bash
 secrets-hunter . --reveal-findings --json results.json --min-confidence 75
 ```
 
-### Export as SARIF
+#### Export as SARIF
 
 ```bash
 secrets-hunter . --sarif results.sarif
 ```
 
-### Fail only on higher-confidence findings
+#### Fail only on higher-confidence findings
 
 ```bash
 secrets-hunter . --min-confidence 75 --fail-on-findings
 ```
 
-### Use overlay config
+#### Use overlay config
+
 Apply custom configuration using an overlay file:
 
 ```bash
 secrets-hunter . --config team.toml
 ```
 
-### Stack multiple overlays
+#### Stack multiple overlays
+
 Apply multiple configuration files in sequence:
 
 ```bash
@@ -220,22 +227,8 @@ secrets-hunter . --config ci.toml --config local.toml
 
 Learn more about configuration in the [Configuration docs](https://docs.fvlcn.dev/secrets-hunter/config/).
 
----
-
 ## Exit codes
 
 - `0` - scan succeeded and no actionable findings remained
 - `1` - scan failed because of an input/runtime error
 - `2` - scan succeeded and actionable findings were reported while `--fail-on-findings` was set
-
----
-
-## Logging
-
-### Debug output
-
-```bash
-secrets-hunter . --log-level DEBUG
-```
-
----
