@@ -45,7 +45,7 @@ secrets-hunter showconfig secret_patterns --config team-overrides.toml
 
 ## Full Schema
 
-### Pattern Table
+### Pattern table
 
 A reusable schema for defining regex-based patterns.
 
@@ -222,7 +222,7 @@ remove_ignore_dirs = ["dist"]
 
 ---
 
-## Practical examples
+## Practical Examples
 
 ### 1) Minimal overlay: add one pattern + ignore a dir
 
@@ -346,7 +346,7 @@ secrets-hunter . --config ci.toml --config local.toml
 
 Configs are layered in the order given: `ci.toml` first, then `local.toml`. Because `local.toml` removes the `test` exclude pattern, local scans will report matches that CI would suppress.
 
-## Keep things clean
+## Keep Things Clean
 
 - Prefer **specific patterns** over broad ones (broad regex = noisy scans).
 - Keep `exclude_patterns` tight; avoid excluding generic words unless you really need it.

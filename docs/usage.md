@@ -39,7 +39,7 @@ If `target` is omitted, Secrets Hunter defaults to the current directory.
 
 ## Usage Examples
 
-### Filesystem Scans
+### Filesystem scans
 
 #### Scan the current directory
 
@@ -97,7 +97,7 @@ docker run --rm -v ~/projects/my-app:/scan ghcr.io/fvlcn/secrets-hunter:latest /
 secrets-hunter path/to/file.py
 ```
 
-### Git History Scans
+### Git History scans
 
 Git history scans use `--git-revset`, which accepts git `rev-list` syntax.
 
@@ -142,7 +142,7 @@ docker run --rm \
   . --git-revset main..HEAD
 ```
 
-### Domain Scans
+### Domain scans
 
 Domain scans check the built-in list of commonly exposed relative paths on the target host.
 
@@ -168,13 +168,13 @@ For internal or controlled environments with custom TLS, certificate verificatio
 secrets-hunter --domain https://internal.example --skip-tls-verify
 ```
 
-### Mode Constraints
+### Mode constraints
 
 - `--git-max-count` requires `--git-revset`.
 - `--skip-tls-verify` requires `--domain`.
 - `--domain` cannot be combined with `--git-revset`.
 
-### Common Options
+### Common options
 
 #### Reveal findings (unmasked)
 
@@ -258,7 +258,7 @@ secrets-hunter . --config ci.toml --config local.toml
 
 Learn more about configuration in the [Configuration docs](https://docs.fvlcn.dev/secrets-hunter/config/).
 
-## Exit codes
+## Exit Codes
 
 - `0` - scan succeeded and no actionable findings remained
 - `1` - scan failed because of an input/runtime error

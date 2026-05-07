@@ -103,7 +103,7 @@ Example invalid base64 body:
 -----BEGIN RSA PRIVATE KEY-----your_key_goes_here-----END RSA PRIVATE KEY-----
 ```
 
-### Missing or Mismatched Footers
+### Missing or mismatched footers
 
 When a multi-line PEM block has no matching footer, Secrets Hunter rejects the PEM candidate as malformed. The same applies when the footer exists but does not match the header type.
 
