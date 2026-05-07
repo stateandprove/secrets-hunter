@@ -58,11 +58,9 @@ For each collected text target, Secrets Hunter:
 
 ## PEM Keys
 
-PEM blocks are detected by header/footer patterns.
+PEM blocks are detected by header/footer patterns. When Secrets Hunter sees a supported PEM header, it collects the whole block up to the matching footer and treats that block as one candidate.
 
-> When Secrets Hunter sees a supported PEM header, it collects the whole block up to the matching footer and treats that block as one candidate.
-
-The body lines are not reported as separate findings.
+> The body lines are not reported as separate findings.
 
 A key is treated as actionable when it looks like private key material: it has a supported private-key header, a matching footer, and a base64 body that can be decoded.
 
