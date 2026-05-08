@@ -16,7 +16,7 @@ secrets-hunter .
 
 ## Git History Scans
 
-Git history scans are enabled with `--git-revset`. Secrets Hunter uses git `rev-list` syntax to select commits, scans changed file blobs from those commits, and reports findings introduced on added lines. This mode requires git to be installed.
+Git history scans are enabled with `--git-revset`. Secrets Hunter uses a git revision expression to select commits, scans changed file blobs from those commits, and reports findings introduced on added lines. This mode requires git to be installed.
 
 ```bash
 secrets-hunter . --git-revset main..HEAD

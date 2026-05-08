@@ -10,32 +10,30 @@ secrets-hunter [OPTIONS] [target]
 
 Other scan modes can be enabled with flags:
 
-- `--git-revset` scans git history using the selected revset.
+- `--git-revset` scans git history using the selected revision expression.
 - `--domain` scans commonly exposed paths on a host or domain.
-
-If `target` is omitted, Secrets Hunter defaults to the current directory.
 
 ## Options
 
-| Flag                      |    Type | Default | Description                                                          |
-|---------------------------|--------:|--------:|----------------------------------------------------------------------|
-| `-h`, `--help`            |         |         | Show help and exit.                                                  |
-| `--config`                |  path[] |         | Path to a TOML overlay config. Can be used multiple times.           |
-| `--git-revset`            |  string |         | Scan git history using commits selected by git `rev-list` syntax.    |
-| `--git-max-count`         |     int |         | Limit the number of commits selected by `--git-revset`.              |
-| `--domain`                |  string |         | Scan commonly exposed paths on a host or domain.                     |
-| `--skip-tls-verify`       |    bool | `False` | Skip TLS certificate verification for domain scans.                  |
-| `--reveal-findings`       |    bool | `False` | Print raw matches in output.                                         |
-| `--json`                  |    path |         | Export results to a JSON file.                                       |
-| `--sarif`                 |    path |         | Export results to a SARIF file.                                      |
-| `--truncate-long-matches` |    bool | `False` | Truncate long finding matches in output.                             |
-| `--hex-entropy`           |   float |   `3.0` | Hex entropy threshold. Lower = more sensitive / more noise.          |
-| `--b64-entropy`           |   float |  `4.25` | Base64 entropy threshold. Lower = more sensitive / more noise.       |
-| `--min-length`            |     int |    `10` | Minimum candidate string length to consider.                         |
-| `--workers`               |     int |     `4` | Number of parallel workers when scanning directories.                |
-| `--log-level`             |    enum |  `INFO` | Logging verbosity: `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`.  |
-| `--min-confidence`        |     int |     `0` | Only report findings with confidence **>=** this value (0–100).      |
-| `--fail-on-findings`      |    bool | `False` | Exit with code `2` if a report contains non-rejected findings.       |
+| Flag                      |   Type | Default | Description                                                           |
+|---------------------------|-------:|--------:|-----------------------------------------------------------------------|
+| `-h`, `--help`            |        |         | Show help and exit.                                                   |
+| `--config`                | path[] |         | Path to a TOML overlay config. Can be used multiple times.            |
+| `--git-revset`            | string |         | Scan git history using commits selected by a git revision expression. |
+| `--git-max-count`         |    int |         | Limit the number of commits selected by `--git-revset`.               |
+| `--domain`                | string |         | Scan commonly exposed paths on a host or domain.                      |
+| `--skip-tls-verify`       |   bool | `False` | Skip TLS certificate verification for domain scans.                   |
+| `--reveal-findings`       |   bool | `False` | Print raw matches in output.                                          |
+| `--json`                  |   path |         | Export results to a JSON file.                                        |
+| `--sarif`                 |   path |         | Export results to a SARIF file.                                       |
+| `--truncate-long-matches` |   bool | `False` | Truncate long finding matches in output.                              |
+| `--hex-entropy`           |  float |   `3.0` | Hex entropy threshold. Lower = more sensitive / more noise.           |
+| `--b64-entropy`           |  float |  `4.25` | Base64 entropy threshold. Lower = more sensitive / more noise.        |
+| `--min-length`            |    int |    `10` | Minimum candidate string length to consider.                          |
+| `--workers`               |    int |     `4` | Number of parallel workers when scanning directories.                 |
+| `--log-level`             |   enum |  `INFO` | Logging verbosity: `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`.   |
+| `--min-confidence`        |    int |     `0` | Only report findings with confidence **>=** this value (0–100).       |
+| `--fail-on-findings`      |   bool | `False` | Exit with code `2` if a report contains non-rejected findings.        |
 
 ---
 
@@ -101,7 +99,7 @@ secrets-hunter path/to/file.py
 
 ### Git History scans
 
-Git history scans use `--git-revset`, which accepts git `rev-list` syntax.
+Git history scans use `--git-revset`, which accepts a git revision expression. It is not parsed as arbitrary `git rev-list` options.
 
 #### Scan a commit
 

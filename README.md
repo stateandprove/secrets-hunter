@@ -69,7 +69,7 @@ Scan a specific file:
 secrets-hunter path/to/file.py
 ```
 
-Scan git history using git rev-list syntax:
+Scan git history using a git revision expression:
 
 ```bash
 secrets-hunter . --git-revset main..HEAD

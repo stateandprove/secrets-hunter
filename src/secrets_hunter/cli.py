@@ -83,7 +83,7 @@ scan_args = {
         "type": str,
         "default": None,
         "metavar": "REVSET",
-        "help": "scan file contents from commits selected by git rev-list syntax"
+        "help": "scan file contents from commits selected by a git revision expression"
     },
     "--git-max-count": {
         "type": int,
