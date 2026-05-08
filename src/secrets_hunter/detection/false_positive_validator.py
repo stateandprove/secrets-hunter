@@ -108,7 +108,7 @@ class FalsePositiveFindingsValidator:
         for exclude_pattern in self.exclude_patterns:
             pattern = exclude_pattern.pattern
 
-            if re.search(pattern, string_lower):
+            if pattern.search(string_lower):
                 if pattern.pattern == "test" and "sk_test" in string_lower:
                     continue
 

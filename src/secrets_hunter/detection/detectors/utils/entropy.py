@@ -24,6 +24,14 @@ def calculate_shannon_entropy(input_string: str) -> float:
 
     return entropy
 
+
+def max_possible_entropy(input_string: str) -> float:
+    if not input_string:
+        return 0.0
+
+    return math.log2(len(set(input_string)))
+
+
 def is_hex_string(s: str) -> bool:
     return bool(s) and bool(HEX_RE.match(s))
 

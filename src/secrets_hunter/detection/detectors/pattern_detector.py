@@ -51,7 +51,7 @@ class PatternDetector(BaseDetector):
                 continue
 
             for secret_type, pattern in self.secret_patterns.items():
-                if re.search(pattern, fragment.content):
+                if pattern.search(fragment.content):
                     finding = self._create_finding(secret_type, fragment, line, line_num, filepath)
                     findings.append(finding)
 
