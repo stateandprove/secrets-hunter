@@ -111,6 +111,7 @@ class BaseScanner(ABC):
             return [], False
         except Exception as e:
             logger.error(f"Error collecting scan work items: {e}")
+            logger.debug("Scan work item collection traceback", exc_info=True)
             return [], False
 
     def scan_lines(
