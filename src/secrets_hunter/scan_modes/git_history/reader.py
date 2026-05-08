@@ -7,6 +7,7 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 DIFF_HUNK_RE = re.compile(r"@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@")
+COMMIT_SHA_RE = re.compile(r"\A(?:[0-9a-f]{40}|[0-9a-f]{64})\Z")
 
 
 class GitHistoryReader:
@@ -26,6 +27,7 @@ class GitHistoryReader:
         if max_count is not None:
             args.extend(["--max-count", str(max_count)])
 
+        args.append("--end-of-options")
         args.append(revset)
         output = self._run_git_text(args)
 
@@ -35,6 +37,8 @@ class GitHistoryReader:
         return [line for line in output.splitlines() if line]
 
     def list_changed_files(self, commit_sha: str) -> list[str]:
+        self._validate_commit_sha(commit_sha)
+
         output = self._run_git_bytes([
             "diff-tree",
             "--root",
@@ -43,6 +47,7 @@ class GitHistoryReader:
             "-r",
             "-z",
             "--diff-filter=AM",
+            "--end-of-options",
             commit_sha
         ])
 
@@ -56,8 +61,10 @@ class GitHistoryReader:
         ]
 
     def read_blob(self, commit_sha: str, repo_rel_path: str) -> bytes | None:
+        self._validate_commit_sha(commit_sha)
+
         result = subprocess.run(
-            ["git", "show", f"{commit_sha}:{repo_rel_path}"],
+            ["git", "show", "--end-of-options", f"{commit_sha}:{repo_rel_path}"],
             cwd=self.repo_root,
             capture_output=True,
             check=False
@@ -75,6 +82,8 @@ class GitHistoryReader:
         return None
 
     def list_added_lines(self, commit_sha: str, repo_rel_path: str) -> set[int]:
+        self._validate_commit_sha(commit_sha)
+
         diff = self._run_git_text([
             "diff-tree",
             "--root",
@@ -82,6 +91,7 @@ class GitHistoryReader:
             "--no-ext-diff",
             "--no-renames",
             "-p",
+            "--end-of-options",
             commit_sha,
             "--",
             repo_rel_path
@@ -148,3 +158,8 @@ class GitHistoryReader:
 
         stderr = result.stderr.decode("utf-8", errors="replace").strip()
         raise RuntimeError(f"git {' '.join(args)} failed: {stderr}")
+
+    @staticmethod
+    def _validate_commit_sha(commit_sha: str) -> None:
+        if not COMMIT_SHA_RE.fullmatch(commit_sha):
+            raise ValueError(f"invalid git commit sha: {commit_sha!r}")
