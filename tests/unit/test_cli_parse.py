@@ -128,7 +128,7 @@ class TestCLIParse(unittest.TestCase):
     def test_workers_invalid_values(self):
         cases = [
             (["secrets-hunter", "scan", "--workers", "0"], "--workers must be > 0"),
-            (["secrets-hunter", "scan", "--workers", "-1"], "--workers must be > 0"),
+            (["secrets-hunter", "scan", "--workers", "-1"], "--workers must be > 0")
         ]
         for argv, msg in cases:
             with self.subTest(argv=argv):
@@ -144,7 +144,7 @@ class TestCLIParse(unittest.TestCase):
     def test_min_confidence_invalid_values(self):
         cases = [
             (["secrets-hunter", "scan", "--min-confidence", "-1"], "--min-confidence must be between 0 and 100"),
-            (["secrets-hunter", "scan", "--min-confidence", "101"], "--min-confidence must be between 0 and 100"),
+            (["secrets-hunter", "scan", "--min-confidence", "101"], "--min-confidence must be between 0 and 100")
         ]
         for argv, msg in cases:
             with self.subTest(argv=argv):
@@ -160,7 +160,7 @@ class TestCLIParse(unittest.TestCase):
     def test_min_length_invalid_values(self):
         cases = [
             (["secrets-hunter", "scan", "--min-length", "0"], "--min-length must be > 0"),
-            (["secrets-hunter", "scan", "--min-length", "-5"], "--min-length must be > 0"),
+            (["secrets-hunter", "scan", "--min-length", "-5"], "--min-length must be > 0")
         ]
         for argv, msg in cases:
             with self.subTest(argv=argv):
@@ -177,7 +177,7 @@ class TestCLIParse(unittest.TestCase):
             (["secrets-hunter", "scan", "--hex-entropy", "-0.1"],
              f"--hex-entropy must be between 0.0 and {settings.HEX_ENTROPY_MAX}"),
             (["secrets-hunter", "scan", "--hex-entropy", str(too_high)],
-             f"--hex-entropy must be between 0.0 and {settings.HEX_ENTROPY_MAX}"),
+             f"--hex-entropy must be between 0.0 and {settings.HEX_ENTROPY_MAX}")
         ]
         for argv, msg in cases:
             with self.subTest(argv=argv):
@@ -189,7 +189,7 @@ class TestCLIParse(unittest.TestCase):
             (["secrets-hunter", "scan", "--b64-entropy", "-0.1"],
              f"--b64-entropy must be between 0.0 and {settings.B64_ENTROPY_MAX}"),
             (["secrets-hunter", "scan", "--b64-entropy", str(too_high)],
-             f"--b64-entropy must be between 0.0 and {settings.B64_ENTROPY_MAX}"),
+             f"--b64-entropy must be between 0.0 and {settings.B64_ENTROPY_MAX}")
         ]
         for argv, msg in cases:
             with self.subTest(argv=argv):
@@ -203,7 +203,7 @@ class TestCLIParse(unittest.TestCase):
         args = self.parse_ok([
             "secrets-hunter", "scan",
             "--hex-entropy", str(settings.HEX_ENTROPY_MAX),
-            "--b64-entropy", str(settings.B64_ENTROPY_MAX),
+            "--b64-entropy", str(settings.B64_ENTROPY_MAX)
         ])
 
         self.assertEqual(args.hex_entropy, settings.HEX_ENTROPY_MAX)
@@ -284,6 +284,87 @@ class TestCLIParse(unittest.TestCase):
             self.assertEqual(args.sarif_output, str(out))
             self.assertEqual(args.command, "scan")
 
+    def test_json_and_sarif_are_mutually_exclusive(self):
+        with tempfile.TemporaryDirectory() as td:
+            td = Path(td)
+            self.assertParseError(
+                [
+                    "secrets-hunter", "scan", ".",
+                    "--json", str(td / "out.json"),
+                    "--sarif", str(td / "out.sarif")
+                ],
+                "--json and --sarif cannot be used together"
+            )
 
-if __name__ == "__main__":
-    unittest.main()
+    # ---------------- validator: git scan args ----------------
+    def test_git_max_count_invalid_values(self):
+        cases = [
+            (["secrets-hunter", "scan", ".", "--git-revset", "HEAD", "--git-max-count", "0"],
+             "--git-max-count must be > 0"),
+            (["secrets-hunter", "scan", ".", "--git-revset", "HEAD", "--git-max-count", "-1"],
+             "--git-max-count must be > 0")
+        ]
+
+        for argv, msg in cases:
+            with self.subTest(argv=argv):
+                self.assertParseError(argv, msg)
+
+    def test_git_max_count_requires_git_revset(self):
+        self.assertParseError(
+            ["secrets-hunter", "scan", ".", "--git-max-count", "2"],
+            "--git-max-count requires --git-revset"
+        )
+
+    def test_git_revset_and_max_count_valid(self):
+        args = self.parse_ok([
+            "secrets-hunter", "scan", ".",
+            "--git-revset", "HEAD~3..HEAD",
+            "--git-max-count", "2"
+        ])
+
+        self.assertEqual(args.git_revset, "HEAD~3..HEAD")
+        self.assertEqual(args.git_max_count, 2)
+
+    # ---------------- validator: domain scan args ----------------
+    def test_domain_valid_plain_host(self):
+        args = self.parse_ok(["secrets-hunter", "scan", "--domain", "fvlcn.dev"])
+
+        self.assertEqual(args.domain, "fvlcn.dev")
+
+    def test_domain_valid_https_url(self):
+        args = self.parse_ok(["secrets-hunter", "scan", "--domain", "https://fvlcn.dev"])
+
+        self.assertEqual(args.domain, "https://fvlcn.dev")
+
+    def test_domain_invalid_scheme_errors(self):
+        self.assertParseError(
+            ["secrets-hunter", "scan", "--domain", "file:///etc/passwd"],
+            "--domain must be an HTTP(S) URL or domain"
+        )
+
+    def test_domain_requires_netloc(self):
+        self.assertParseError(
+            ["secrets-hunter", "scan", "--domain", "https:///etc/passwd"],
+            "--domain must be an HTTP(S) URL or domain"
+        )
+
+    def test_domain_cannot_be_combined_with_git_revset(self):
+        self.assertParseError(
+            ["secrets-hunter", "scan", ".", "--domain", "fvlcn.dev", "--git-revset", "HEAD"],
+            "--domain cannot be combined with --git-revset"
+        )
+
+    def test_skip_tls_verify_requires_domain(self):
+        self.assertParseError(
+            ["secrets-hunter", "scan", ".", "--skip-tls-verify"],
+            "--skip-tls-verify requires --domain"
+        )
+
+    def test_skip_tls_verify_valid_with_domain(self):
+        args = self.parse_ok([
+            "secrets-hunter", "scan",
+            "--domain", "fvlcn.dev",
+            "--skip-tls-verify"
+        ])
+
+        self.assertTrue(args.skip_tls_verify)
