@@ -110,7 +110,7 @@ class BaseScanner(ABC):
             logger.info("Scan aborted.")
             return [], False
         except Exception as e:
-            logger.error(f"Error collecting scan work items: {e}", exc_info=True)
+            logger.error(f"Error collecting scan work items: {e}")
             return [], False
 
     def scan_lines(
