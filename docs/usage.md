@@ -260,6 +260,6 @@ Learn more about configuration in the [Configuration docs](https://docs.fvlcn.de
 
 ## Exit Codes
 
-- `0` - scan succeeded and no actionable findings remained
-- `1` - scan failed because of an input/runtime error
-- `2` - scan succeeded and actionable findings were reported while `--fail-on-findings` was set
+- `0` - scan completed successfully. Findings may still be present unless `--fail-on-findings` is used.
+- `1` - scan failed because of an input or runtime error.
+- `2` - scan completed successfully and actionable findings were reported while `--fail-on-findings` was set.
