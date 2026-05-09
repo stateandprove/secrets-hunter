@@ -26,6 +26,12 @@ class ConsoleReporter(BaseConsoleReporter):
             lines.append(f"[{i}] {f.title}")
             lines.append(f"    Severity:   {f.severity} (confidence: {f.confidence}%, reasoning: {f.confidence_reasoning})")
 
+            if getattr(f, "commit", None):
+                lines.append(f"    Commit:     {f.commit}")
+
+            if getattr(f, "vulnerable_url", None):
+                lines.append(f"    URL:        {f.vulnerable_url}")
+
             if getattr(f, "context_var", None):
                 lines.append(f"    Variable:   {f.context_var}")
 

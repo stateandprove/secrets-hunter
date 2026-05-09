@@ -1,7 +1,8 @@
 import re
 
-from secrets_hunter.detectors.base import BaseDetector
-from secrets_hunter.models import Finding, DetectionMethod, Severity, Confidence, LineFragment
+from secrets_hunter.detection.detectors.base import BaseDetector
+from secrets_hunter.detection.fragmenter import LineFragment
+from secrets_hunter.models import Finding, DetectionMethod, Severity, Confidence
 
 
 class PatternDetector(BaseDetector):
@@ -50,7 +51,7 @@ class PatternDetector(BaseDetector):
                 continue
 
             for secret_type, pattern in self.secret_patterns.items():
-                if re.search(pattern, fragment.content):
+                if pattern.search(fragment.content):
                     finding = self._create_finding(secret_type, fragment, line, line_num, filepath)
                     findings.append(finding)
 

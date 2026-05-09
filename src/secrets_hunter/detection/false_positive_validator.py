@@ -4,7 +4,8 @@ import re
 from binascii import Error as BinasciiError
 
 from secrets_hunter.config.settings import MIN_PEM_BODY_BYTES
-from secrets_hunter.models import Finding, DBConnectionFragment, PEMKeyFragment
+from secrets_hunter.detection.fragmenter import DBConnectionFragment, PEMKeyFragment
+from secrets_hunter.models import Finding
 from secrets_hunter.models.config import ExcludePattern
 
 # Special patterns
@@ -72,6 +73,12 @@ class FalsePositiveFindingsValidator:
         if not body:
             return None
 
+        if len(body) % 4 != 0:
+            return None
+
+        if not re.fullmatch(r"[A-Za-z0-9+/]*={0,2}", body):
+            return None
+
         try:
             body_decoded = base64.b64decode(body, validate=True)
             return body_decoded
@@ -107,7 +114,7 @@ class FalsePositiveFindingsValidator:
         for exclude_pattern in self.exclude_patterns:
             pattern = exclude_pattern.pattern
 
-            if re.search(pattern, string_lower):
+            if pattern.search(string_lower):
                 if pattern.pattern == "test" and "sk_test" in string_lower:
                     continue
 

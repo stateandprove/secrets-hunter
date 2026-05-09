@@ -1,10 +1,9 @@
 import re
 
-from secrets_hunter.detectors.base import BaseDetector
+from secrets_hunter.detection.detectors.base import BaseDetector
 from secrets_hunter.config import CLIArgs
-from secrets_hunter.models import (
-    Finding, DetectionMethod, Severity, Confidence, LineFragment
-)
+from secrets_hunter.detection.fragmenter import LineFragment
+from secrets_hunter.models import Finding, DetectionMethod, Severity, Confidence
 
 from .utils import entropy as entropy_utils
 
@@ -29,10 +28,24 @@ class EntropyDetector(BaseDetector):
         for fragment in fragments:
             cleaned = self.ignore_prefixes.sub('', fragment.content)
 
-            entropy = entropy_utils.calculate_shannon_entropy(cleaned)
             is_hex = entropy_utils.is_hex_string(cleaned)
             is_base64 = entropy_utils.is_base64_string(cleaned)
             is_base64url = entropy_utils.is_base64url_string(cleaned)
+
+            if not (is_hex or is_base64 or is_base64url):
+                continue
+
+            max_entropy = entropy_utils.max_possible_entropy(cleaned)
+            can_match_hex = is_hex and max_entropy >= self.cli_args.hex_entropy_threshold
+            can_match_b64 = (
+                (is_base64 or is_base64url)
+                and max_entropy >= self.cli_args.b64_entropy_threshold
+            )
+
+            if not can_match_hex and not can_match_b64:
+                continue
+
+            entropy = entropy_utils.calculate_shannon_entropy(cleaned)
 
             is_high_entropy = False
             string_type = None

@@ -2,7 +2,7 @@ import sys
 import argparse
 import logging
 
-from secrets_hunter import __version__
+from secrets_hunter._version import __version__
 from secrets_hunter.scanner import SecretsHunter
 from secrets_hunter.config import CLIArgs, CLIDefaults, load_runtime_config
 from secrets_hunter.validators import CLIArgsValidator
@@ -78,6 +78,29 @@ scan_args = {
         "type": int,
         "default": CLIDefaults.MAX_WORKERS,
         "help": f"number of parallel workers (default: {CLIDefaults.MAX_WORKERS})"
+    },
+    "--git-revset": {
+        "type": str,
+        "default": None,
+        "metavar": "REVSET",
+        "help": "scan file contents from commits selected by a git revision expression"
+    },
+    "--git-max-count": {
+        "type": int,
+        "default": None,
+        "metavar": "N",
+        "help": "limit number of commits selected by --git-revset"
+    },
+    "--domain": {
+        "type": str,
+        "default": None,
+        "metavar": "DOMAIN",
+        "help": "scan common sensitive URLs on a domain"
+    },
+    "--skip-tls-verify": {
+        "action": "store_true",
+        "default": CLIDefaults.SKIP_TLS_VERIFY,
+        "help": "skip TLS certificate verification for domain scans"
     },
     "--log-level": {
         "type": str,

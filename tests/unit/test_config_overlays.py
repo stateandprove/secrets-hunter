@@ -358,7 +358,3 @@ class TestConfigOverlays(unittest.TestCase):
 
             cfg = load_runtime_config([rm_first, add_later])
             self.assertIn("ut_late_dir", cfg.ignore_dirs)
-
-
-if __name__ == "__main__":
-    unittest.main()

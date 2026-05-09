@@ -38,6 +38,8 @@ class SARIFReporter:
                     "detection_method": finding.detection_method,
                     "confidence": finding.confidence,
                     "context_var": finding.context_var,
+                    "commit": finding.commit,
+                    "vulnerable_url": finding.vulnerable_url,
                     "severity": finding.severity,
                     "confidence_reasoning": finding.confidence_reasoning
                 }
