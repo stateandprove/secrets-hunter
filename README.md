@@ -7,6 +7,7 @@
 
 It is language agnostic and works on text content rather than language-specific syntax, which makes it suitable for finding secrets in mixed repositories, configuration files, scripts, and infrastructure code.
 
+> [!WARNING]
 > Secrets Hunter is intended for defensive security work. Do not use it to scan third-party systems, domains, repositories, or infrastructure without permission.
 
 Scans do not require external dependencies to run, though git must be installed to scan git history. You can run scans from the command line, wire them into git hooks for local development, or automate them in CI to act as a security gate.
