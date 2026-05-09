@@ -73,6 +73,12 @@ class FalsePositiveFindingsValidator:
         if not body:
             return None
 
+        if len(body) % 4 != 0:
+            return None
+
+        if not re.fullmatch(r"[A-Za-z0-9+/]*={0,2}", body):
+            return None
+
         try:
             body_decoded = base64.b64decode(body, validate=True)
             return body_decoded
