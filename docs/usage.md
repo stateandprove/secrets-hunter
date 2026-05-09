@@ -18,6 +18,7 @@ Other scan modes can be enabled with flags:
 | Flag                      |   Type | Default | Description                                                           |
 |---------------------------|-------:|--------:|-----------------------------------------------------------------------|
 | `-h`, `--help`            |        |         | Show help and exit.                                                   |
+| `--version`               |        |         | Show version and exit.                                                |
 | `--config`                | path[] |         | Path to a TOML overlay config. Can be used multiple times.            |
 | `--git-revset`            | string |         | Scan git history using commits selected by a git revision expression. |
 | `--git-max-count`         |    int |         | Limit the number of commits selected by `--git-revset`.               |
@@ -205,7 +206,9 @@ Example output:
         "confidence_reasoning": "Pattern Match",
         "detection_method": "pattern",
         "confidence": 100,
-        "context_var": "jwt_secret_token"
+        "context_var": "jwt_secret_token",
+        "commit": null,
+        "vulnerable_url": null
     }
 ]
 ```
