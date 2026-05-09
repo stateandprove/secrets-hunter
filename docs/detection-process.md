@@ -37,13 +37,13 @@ Process context, rejection, and confidence
         +--> find assignment and key/value context
         |
         +--> without assignment context:
-        |       +--> mark value-based false positives
+        |     +--> mark value-based false positives
         |
         +--> with assignment context:
-        |       +--> give entropy findings an assignment-context confidence boost
-        |       +--> mark keyword-based false positives
-        |       +--> mark value-based false positives unless secret-like context permits them
-        |       +--> give entropy findings a secret-keyword confidence boost
+        |     +--> give entropy findings an assignment-context confidence boost
+        |     +--> mark keyword-based false positives
+        |     +--> mark value-based false positives unless secret-like context permits them
+        |     +--> give entropy findings a secret-keyword confidence boost
         |
         v
 Prepare findings for output
